@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class UserRepository {
 
-  Future<bool> login(String username, String password) async {
+  static Future<bool> login(String username, String password) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}login_check";
 
@@ -23,9 +23,31 @@ class UserRepository {
     if (body['token'] != null && response.statusCode == 200) {
       sp.setString('token', body['token']);
       return true;
-    } else {
-      return false;
     }
+    return false;
+  }
+
+
+  static Future<bool> register(String username, String password) async {
+    SharedPreferences sp = await SharedPreferences.getInstance();
+    String? url = "${sp.getString('url')}register";
+
+    http.Response response = await http.post(
+      Uri.parse(url),
+      headers: <String, String> {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(<String, String>{
+        'username': username,
+        'password': password
+      }),
+    );
+
+    var body = json.decode(response.body);
+    if (response.statusCode == 200) {
+      return true;
+    }
+    return false;
 
   }
 

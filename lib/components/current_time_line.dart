@@ -19,7 +19,7 @@ class CurrentTimeLine extends StatelessWidget {
         Positioned(
           top: distance.toDouble(),
           left: 0,
-          right: 1350, //1350
+          right: 0, //1350
           child: Container(
             height: 2,
             color: Colors.red,
@@ -30,7 +30,7 @@ class CurrentTimeLine extends StatelessWidget {
           left: 130,
           child: Text(currentTime, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))
         ),
-        DayTable()
+        const DayTable()
       ]
     );
   }

@@ -1,28 +1,26 @@
 
-
-
 class User {
-  final int userId;
   final int id;
-  final String title;
+  final String nickname;
+  final String mail;
 
   const User({
-    required this.userId,
     required this.id,
-    required this.title,
+    required this.nickname,
+    required this.mail
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return switch (json) {
       {
-      'userId': int userId,
       'id': int id,
-      'title': String title,
+      'nickname': String nickname,
+      'mail': String mail
       } =>
           User(
-            userId: userId,
             id: id,
-            title: title,
+            nickname: nickname,
+            mail: mail,
           ),
       _ => throw const FormatException('Failed to load User.'),
     };

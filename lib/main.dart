@@ -1,13 +1,14 @@
 import 'package:day_planner_web/components/current_time_line.dart';
 import 'package:day_planner_web/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'components/day_table.dart';
+import 'components/calendar_dialog.dart';
+import 'components/login_dialog.dart';
+import 'components/settings_dialog.dart';
 
 void main() {
   initSP();
@@ -50,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
   DateTime currentTime = DateTime.now();
   String displayTime = "00:00";
   int timelineDistance = 0;
-
+  
 
   void _updateTime() {
     setState(() {
@@ -71,7 +72,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _updateTime();
 
     var now = DateTime.now();
-    Timer.periodic(const Duration(minutes: 1) - Duration(seconds: now.second), (Timer t) => _updateTime());
+    Timer.periodic(const Duration(seconds: 1), (Timer t) => _updateTime());
   }
 
   @override
@@ -82,83 +83,19 @@ class _MyHomePageState extends State<MyHomePage> {
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
 
-    // FORM CONNEXION UTILISATEUR
-    Future<void> _loginDialogBuilder(BuildContext context) {
-      return showDialog<void>(
-        context: context,
-        builder: (BuildContext context) {
-          return SimpleDialog(
-            title: const Text('Connexion Utilisateur'),
-            children: <Widget>[
-            Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Adresse mail'),
-                    controller: emailController,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Il manque l\'adresse mail';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    obscureText: true,
-                    enableSuggestions: false,
-                    autocorrect: false,
-                    decoration: const InputDecoration(labelText: 'Mot de passe'),
-                    controller: passwordController,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Il manque le mot de passe';
-                      }
-                      return null;
-                    },
-                  ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        bool r = await UserRepository().login(emailController.text, passwordController.text);
-                        if (r) {
-                          SharedPreferences sp = await SharedPreferences.getInstance();
-                          String? token = sp.getString('token');
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Connecté !")));
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text("Veuillez vérifier les identifiants.")
-                          ));
-                        }
-                      }
-                    },
-                    child: const Text('Valider'),
-                  ),
-                ),
-              ],
-            ),
-          )
-            ],
-          );
-        },
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.account_circle),
-              tooltip: 'Se connecter',
-              onPressed: () => _loginDialogBuilder(context),
-            )
-          ]
+        actions: [
+          IconButton(onPressed: () => CalendarDialog.calendarDialogBuilder(context), icon: const Icon(Icons.calendar_month)),
+          IconButton(
+            icon: const Icon(Icons.account_circle),
+            tooltip: 'Se connecter',
+            onPressed: () => LoginDialog.loginDialogBuilder(context),
+          ),
+          IconButton(onPressed: () => SettingsDialog.settingsDialogBuilder(context), icon: const Icon(Icons.settings))
+        ]
       ),
       body: GridView(
         // Center is a layout widget. It takes a single child and positions it
