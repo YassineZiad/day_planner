@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -55,7 +56,7 @@ class LoginDialog extends StatelessWidget {
                             SharedPreferences sp = await SharedPreferences.getInstance();
                             String? token = sp.getString('token');
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Connecté !")));
+                            //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Connecté !")));
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                                 content: Text("Veuillez vérifier les identifiants.")

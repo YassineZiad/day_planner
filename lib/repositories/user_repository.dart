@@ -27,7 +27,6 @@ class UserRepository {
     return false;
   }
 
-
   static Future<bool> register(String username, String password) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}register";

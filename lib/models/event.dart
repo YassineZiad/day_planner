@@ -14,23 +14,22 @@ class Event {
     required this.endDt
   });
 
+// {
+// "id":7,
+// "summary":"Bagarre",
+// "startDT":"2024-02-13T11:30:00+01:00",
+// "endDT":"2024-02-13T12:00:00+01:00",
+// "User":{"id":3,"nickname":"yass","mail":"yassine.ziad@hesias.fr"}
+// }
+
   factory Event.fromJson(Map<String, dynamic> json) {
-    return switch (json) {
-      {
-      'id': int id,
-      'userId': int userId,
-      'summary': String summary,
-      'startDt': DateTime startDt,
-      'endDt': DateTime endDt
-      } =>
-          Event(
-            id: id,
-            userId: userId,
-            summary: summary,
-            startDt: startDt,
-            endDt: endDt
-          ),
-      _ => throw const FormatException('Failed to load Event.'),
-    };
+    return Event(
+      id: json['id'],
+      summary: json['summary'],
+      startDt: DateTime.parse(json['startDT']),
+      endDt: DateTime.parse(json['endDT']),
+      userId: json['User']['id'],
+    );
   }
+
 }

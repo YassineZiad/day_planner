@@ -1,5 +1,7 @@
+
 import 'package:day_planner_web/components/current_time_line.dart';
-import 'package:day_planner_web/repositories/user_repository.dart';
+import 'package:day_planner_web/components/notes_component.dart';
+import 'package:day_planner_web/repositories/event_repository.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
@@ -9,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'components/calendar_dialog.dart';
 import 'components/login_dialog.dart';
 import 'components/settings_dialog.dart';
+import 'models/event.dart';
 
 void main() {
   initSP();
@@ -51,7 +54,17 @@ class _MyHomePageState extends State<MyHomePage> {
   DateTime currentTime = DateTime.now();
   String displayTime = "00:00";
   int timelineDistance = 0;
-  
+
+  List<Event> events = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _updateTime();
+
+    var now = DateTime.now();
+    Timer.periodic(const Duration(seconds: 1), (Timer t) => _updateTime());
+  }
 
   void _updateTime() {
     setState(() {
@@ -65,24 +78,33 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Future<void> getEvents() async {
+    var futureEvents = EventRepository.getEvents();
+    futureEvents.then((dayEvents) => events.addAll(dayEvents));
 
-  @override
-  void initState() {
-    super.initState();
-    _updateTime();
+    SharedPreferences sp = await SharedPreferences.getInstance();
+    String? token = sp.getString('token');
 
-    var now = DateTime.now();
-    Timer.periodic(const Duration(seconds: 1), (Timer t) => _updateTime());
+
+    // if (token != null) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //       const SnackBar(content: Text("e"))
+    //   );
+    //   var futureEvents = EventRepository.getEvents();
+    //   futureEvents.then((events) => events.addAll(events));
+    // }
+  }
+
+  void login() {
+    events.clear();
+    LoginDialog.loginDialogBuilder(context).then((value) => {
+      getEvents()
+    });
+
   }
 
   @override
   Widget build(BuildContext context) {
-
-    final _formKey = GlobalKey<FormState>();
-
-    TextEditingController emailController = TextEditingController();
-    TextEditingController passwordController = TextEditingController();
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -92,31 +114,33 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
             icon: const Icon(Icons.account_circle),
             tooltip: 'Se connecter',
-            onPressed: () => LoginDialog.loginDialogBuilder(context),
+            onPressed: () => login()
           ),
           IconButton(onPressed: () => SettingsDialog.settingsDialogBuilder(context), icon: const Icon(Icons.settings))
         ]
       ),
       body: GridView(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        padding: EdgeInsets.all(10),
+        padding: const EdgeInsets.all(10),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 1),
         children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              CurrentTimeLine(distance: timelineDistance, currentTime: displayTime)
+          Row(
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  CurrentTimeLine(distance: timelineDistance, currentTime: displayTime, events: events)
+                ],
+              ),
+
+              const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  NotesComponent()
+                ],
+              )
             ],
           ),
-
-          const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text("Coucou")
-            ],
-          )
         ],
       ),
     );
