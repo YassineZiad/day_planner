@@ -3,7 +3,6 @@ import 'package:day_planner/components/event_component.dart';
 import 'package:day_planner/models/event.dart';
 import 'package:flutter/material.dart';
 
-import 'better_event_componenent.dart';
 
 class CurrentTimeLine extends StatelessWidget {
 
@@ -99,7 +98,7 @@ class CurrentTimeLine extends StatelessWidget {
               color: Colors.red,
             )
         ),
-        for (Event e in events) (BetterEventComponent(event: e, color: Colors.black26))
+        for (Event e in events) (EventComponent(event: e, color: Colors.black26))
       ]
     );
 

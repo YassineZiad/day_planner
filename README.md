@@ -1,6 +1,6 @@
 # Day Planner | Web, Mobile, Desktop
 
-Day Planner version Web
+Major Project Concepteur Développeur Applications
 
 ## Liens
 

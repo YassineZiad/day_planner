@@ -3,7 +3,10 @@ import 'package:day_planner/components/current_time_line.dart';
 import 'package:day_planner/components/expandable_fab.dart';
 import 'package:day_planner/components/notes_component.dart';
 import 'package:day_planner/repositories/event_repository.dart';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
 
@@ -16,8 +19,7 @@ import 'dialogs/settings_dialog.dart';
 import 'models/event.dart';
 
 void main() {
-  initSP();
-  runApp(const MyApp());
+  initializeDateFormatting('fr_FR', null).then((_) => runApp(const MyApp()));
 }
 
 void initSP() async {
@@ -57,13 +59,16 @@ class _MyHomePageState extends State<MyHomePage> {
   String displayTime = "00:00";
   int timelineDistance = 0;
 
+  late DateTime _date;
   List<Event> events = [];
 
   @override
   void initState() {
     super.initState();
+    initSP();
     _updateTime();
 
+    _date = DateTime.now();
     var now = DateTime.now();
     Timer.periodic(const Duration(seconds: 1), (Timer t) => _updateTime());
   }
@@ -78,6 +83,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
       timelineDistance = currentTime.hour * 60 + currentTime.minute;
     });
+  }
+
+  String getDateLabel() {
+    final DateFormat formatter = DateFormat('EEEE dd LLLL yyyy', "fr");
+    return formatter.format(_date);
   }
 
   Future<void> getEvents() async {
@@ -102,7 +112,6 @@ class _MyHomePageState extends State<MyHomePage> {
     LoginDialog.loginDialogBuilder(context).then((value) => {
       getEvents()
     });
-
   }
 
   @override
@@ -146,10 +155,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
+                  Text(getDateLabel(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30), locale: const Locale("fr")),
                   CurrentTimeLine(distance: timelineDistance, currentTime: displayTime, events: events)
                 ],
               ),
-
               const Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [

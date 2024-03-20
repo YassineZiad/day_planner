@@ -44,4 +44,27 @@ class EventRepository {
     return (response.statusCode == 201);
   }
 
+  static Future<bool> updateEvent(Event e) async {
+    SharedPreferences sp = await SharedPreferences.getInstance();
+    String? url = "${sp.getString('url')}events/${e.id}";
+    String? token = sp.getString('token');
+
+    final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+
+    http.Response response = await http.put(
+      Uri.parse(url),
+      headers: <String, String> {
+        'Authorization': 'bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(<String, String>{
+        'summary': e.summary,
+        'startDT': formatter.format(e.startDt),
+        'endDT': formatter.format(e.endDt)
+      }),
+    );
+
+    return (response.statusCode == 204);
+  }
+
 }

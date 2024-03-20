@@ -24,28 +24,50 @@ class EventDialog {
     return create ? "" : event!.summary;
   }
 
-  // static Future<void> newToDoTaskDialogBuilder(BuildContext context) {
-  //   return showDialog<void>(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return SimpleDialog(
-  //         title: const Text('Ajouter une tâche'),
-  //         children: <Widget>[
-  //           Switch(
-  //             value: false,
-  //             activeColor: Colors.blueAccent,
-  //             onChanged: (bool value) => b = value
-  //           )
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
+  static Future<TimeOfDay> showStartTimePicker(BuildContext context, TimeOfDay startT) async {
+    TimeOfDay? pickerTime = await showTimePicker(
+        context: context,
+        helpText: "Début de l'évènement",
+        barrierDismissible: false,
+        initialTime: startT,
+        confirmText: "Confirmer",
+        cancelText: "Annuler",
+        hourLabelText: "Heure",
+        minuteLabelText: "Minute",
+        builder: (BuildContext context, Widget? child) {
+          return MediaQuery(
+              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+              child: child!
+          );
+        }
+    );
+    return pickerTime == null ? startT : pickerTime;
+  }
+
+  static Future<TimeOfDay> showEndTimePicker(BuildContext context, TimeOfDay endT) async {
+    TimeOfDay? pickerTime = await showTimePicker(
+        context: context,
+        helpText: "Fin de l'évènement",
+        barrierDismissible: false,
+        initialTime: endT,
+        confirmText: "Confirmer",
+        cancelText: "Annuler",
+        hourLabelText: "Heure",
+        minuteLabelText: "Minute",
+        builder: (BuildContext context, Widget? child) {
+          return MediaQuery(
+              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+              child: child!
+          );
+        }
+    );
+    return pickerTime == null ? endT : pickerTime;
+  }
 
   Future<void> loginDialogBuilder(BuildContext context) {
     DateTime dt = DateTime.now();
-    TimeOfDay? startT = TimeOfDay.now();
-    TimeOfDay? endT = TimeOfDay.now();
+    TimeOfDay? startT = create ? TimeOfDay.now() : TimeOfDay(hour: event!.startDt.hour, minute: event!.startDt.minute);
+    TimeOfDay? endT = create ? TimeOfDay.now() : TimeOfDay(hour: event!.endDt.hour, minute: event!.endDt.minute);
 
     summaryController.text = loadSummary();
 
@@ -74,41 +96,14 @@ class EventDialog {
                       icon: const Icon(Icons.hourglass_top),
                       label: const Text("Heure de début"),
                       onPressed: () async {
-                          startT = await showTimePicker(
-                              context: context,
-                              barrierDismissible: false,
-                              initialTime: startT!,
-                              hourLabelText: "Heure",
-                              minuteLabelText: "Minute",
-                              initialEntryMode: TimePickerEntryMode.inputOnly,
-                              builder: (BuildContext context, Widget? child) {
-                                return MediaQuery(
-                                    data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-                                    child: child!
-                                );
-                              }
-                          );
+                          startT = await showStartTimePicker(context, startT!);
                         },
                     ),
                     TextButton.icon(
                         icon: const Icon(Icons.hourglass_bottom),
                         label: const Text("Heure de fin"),
                         onPressed: () async {
-                          endT = await showTimePicker(
-                              context: context,
-                              barrierDismissible: false,
-                              initialTime: endT!,
-                              barrierLabel: "CC",
-                              hourLabelText: "Heure",
-                              minuteLabelText: "Minute",
-                              initialEntryMode: TimePickerEntryMode.inputOnly,
-                              builder: (BuildContext context, Widget? child) {
-                                return MediaQuery(
-                                    data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-                                    child: child!
-                                );
-                              }
-                          );
+                          endT = await showEndTimePicker(context, endT!);
                         }
                     ),
                     ElevatedButton(
@@ -120,9 +115,18 @@ class EventDialog {
                             endDt: DateTime(dt.year, dt.month, dt.day, endT!.hour, endT!.minute)
                           );
 
-                          bool r = await EventRepository.createEvent(e);
+                          bool r;
+                          if (create) {
+                            r = await EventRepository.createEvent(e);
+                          } else {
+                            e.id = event!.id;
+                            r = await EventRepository.updateEvent(e);
+                          }
+
+                          Navigator.pop(context);
+
                           if (r) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("OK")));
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Effectué avec succès !")));
                           }
                         }
                       },
