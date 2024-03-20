@@ -21,6 +21,21 @@ class EventRepository {
     return json.decode(response.body).map((events) => Event.fromJson(events)).toList().cast<Event>();
   }
 
+  static Future<Event> getEventById(int id) async {
+    SharedPreferences sp = await SharedPreferences.getInstance();
+    String? url = "${sp.getString('url')}events/$id";
+    String? token = sp.getString('token');
+
+    http.Response response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'bearer $token',
+        }
+    );
+
+    return Event.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
   static Future<bool> createEvent(Event e) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}events";

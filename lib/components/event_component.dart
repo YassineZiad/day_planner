@@ -82,9 +82,6 @@ class _EventComponentState extends State<EventComponent> {
         top: _top,
         left: 120,
         child: GestureDetector(
-            onDoubleTap: () {
-              EventDialog(create: false, event: _event).loginDialogBuilder(context);
-            },
             onVerticalDragUpdate: (details) {
               setState(() {
                 _top += details.delta.dy;
@@ -102,44 +99,53 @@ class _EventComponentState extends State<EventComponent> {
                         bottom: BorderSide()
                     )
                 ),
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                        Row(
-                          children: [
-                            Text(_event.summary,
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                textAlign: TextAlign.start
-                            ),
-                            Visibility(
-                                visible: _canSave,
-                                child: IconButton(
-                                  icon: const Icon(Icons.save),
-                                  iconSize: 20,
-                                  onPressed: () {
-                                    _canSave = false;
+                child: InkWell(
+                    onTap: () {
+                        EventDialog(create: false, event: _event).loginDialogBuilder(context).then((value) {
+                            setState(() async {
+                              _event = await EventRepository.getEventById(_event.id!);
+                            });
+                        });
+                    },
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Text(_event.summary,
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.start
+                              ),
+                              Visibility(
+                                  visible: _canSave,
+                                  child: IconButton(
+                                      icon: const Icon(Icons.save),
+                                      iconSize: 20,
+                                      onPressed: () {
+                                        _canSave = false;
 
-                                    setState(() async {
-                                      Event e = await updateEvent(_event, _top, _height, context);
-                                      _event = e;
+                                        setState(() async {
+                                          Event e = await updateEvent(_event, _top, _height, context);
+                                          _event = e;
+                                        });
+                                      }
+                                  )
+                              )
+                            ],
+                          ),
+                          Container(
+                              child: GestureDetector(
+                                  onVerticalDragUpdate: (details) {
+                                    setState(() {
+                                      _height += details.delta.dy;
+                                      _canSave = true;
                                     });
-                                  }
-                                )
-                            )
-                          ],
-                        ),
-                        Container(
-                            child: GestureDetector(
-                              onVerticalDragUpdate: (details) {
-                                setState(() {
-                                  _height += details.delta.dy;
-                                  _canSave = true;
-                                });
-                              },
-                              child: const Icon(Icons.keyboard_arrow_down)
-                            )
-                        )
-                    ]
+                                  },
+                                  child: const Icon(Icons.keyboard_arrow_down)
+                              )
+                          )
+                        ]
+                    )
                 )
             )
         )
