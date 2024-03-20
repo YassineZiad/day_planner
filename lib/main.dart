@@ -1,16 +1,18 @@
 
-import 'package:day_planner_web/components/current_time_line.dart';
-import 'package:day_planner_web/components/notes_component.dart';
-import 'package:day_planner_web/repositories/event_repository.dart';
+import 'package:day_planner/components/current_time_line.dart';
+import 'package:day_planner/components/expandable_fab.dart';
+import 'package:day_planner/components/notes_component.dart';
+import 'package:day_planner/repositories/event_repository.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'components/calendar_dialog.dart';
-import 'components/login_dialog.dart';
-import 'components/settings_dialog.dart';
+import 'dialogs/calendar_dialog.dart';
+import 'dialogs/login_dialog.dart';
+import 'dialogs/event_dialog.dart';
+import 'dialogs/settings_dialog.dart';
 import 'models/event.dart';
 
 void main() {
@@ -79,6 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> getEvents() async {
+    events.clear();
     var futureEvents = EventRepository.getEvents();
     futureEvents.then((dayEvents) => events.addAll(dayEvents));
 
@@ -96,7 +99,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void login() {
-    events.clear();
     LoginDialog.loginDialogBuilder(context).then((value) => {
       getEvents()
     });
@@ -119,6 +121,21 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(onPressed: () => SettingsDialog.settingsDialogBuilder(context), icon: const Icon(Icons.settings))
         ]
       ),
+
+      floatingActionButton: ExpandableFab(
+        distance: 112,
+        children: [
+          const ActionButton(
+            icon: Icon(Icons.edit_note),
+            tooltip: "Tâche"
+          ),
+          ActionButton(
+            onPressed: () => EventDialog(create: true).loginDialogBuilder(context).then((v) => getEvents()),
+            icon: const Icon(Icons.calendar_month_outlined),
+            tooltip: "Evènement"
+          )
+        ],
+      ),
       body: GridView(
         padding: const EdgeInsets.all(10),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 1),
@@ -134,7 +151,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
 
               const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   NotesComponent()
                 ],
@@ -146,4 +163,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-

@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import '../dialogs/event_dialog.dart';
 import '../models/event.dart';
 
-class EventComponent extends StatefulWidget {
+class BetterEventComponent extends StatefulWidget {
 
   final Event event;
   final Color color;
 
-  const EventComponent({
+  const BetterEventComponent({
     super.key,
     required this.event,
     required this.color
@@ -18,7 +18,7 @@ class EventComponent extends StatefulWidget {
   _ResizableContainerState createState() => _ResizableContainerState();
 }
 
-class _ResizableContainerState extends State<EventComponent> {
+class _ResizableContainerState extends State<BetterEventComponent> {
 
   double getTimePeriod() {
     double startTime = (widget.event.startDt.hour * 60 + widget.event.startDt.minute).toDouble();
@@ -77,7 +77,10 @@ class _ResizableContainerState extends State<EventComponent> {
                                   _height += details.delta.dy;
                                 });
                               },
-                              child: const Icon(Icons.keyboard_arrow_down)
+                              child: Container(
+                                //margin: EdgeInsets.only(left: ),
+                                child: Icon(Icons.keyboard_arrow_down)
+                              )
                           )
                       )
                     ]

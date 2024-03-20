@@ -42,7 +42,6 @@ class UserRepository {
       }),
     );
 
-    var body = json.decode(response.body);
     if (response.statusCode == 200) {
       return true;
     }

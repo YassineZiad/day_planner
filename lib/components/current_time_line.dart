@@ -1,7 +1,9 @@
 
-import 'package:day_planner_web/components/event_component.dart';
-import 'package:day_planner_web/models/event.dart';
+import 'package:day_planner/components/event_component.dart';
+import 'package:day_planner/models/event.dart';
 import 'package:flutter/material.dart';
+
+import 'better_event_componenent.dart';
 
 class CurrentTimeLine extends StatelessWidget {
 
@@ -41,29 +43,6 @@ class CurrentTimeLine extends StatelessWidget {
 
     return Stack(
       children: <Widget>[
-        Positioned(
-          top: distance.toDouble(),
-          left: 0,
-          right: 0, //1350
-          child: Container(
-            height: 2,
-            color: Colors.red,
-          )
-        ),
-        Positioned(
-            top: distance.toDouble(),
-            right: 5,
-            child: Text(currentTime, style: TextStyle(
-              foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = 6..color = Colors.white,
-              fontWeight: FontWeight.bold
-            ))
-        ),
-        Positioned(
-            top: distance.toDouble(),
-            right: 5,
-            child: Text(currentTime, style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))
-        ),
-        for (Event e in events) (EventComponent(event: e, color: Colors.black26)),
         Container(
           padding: const EdgeInsets.all(0),
           child: Table(
@@ -97,8 +76,33 @@ class CurrentTimeLine extends StatelessWidget {
                 )
             ],
           )
-        )
+        ),
+        Positioned(
+            top: distance.toDouble(),
+            right: 5,
+            child: Text(currentTime, style: TextStyle(
+                foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = 3..color = Colors.white,
+                fontWeight: FontWeight.bold
+            ))
+        ),
+        Positioned(
+            top: distance.toDouble(),
+            right: 5,
+            child: Text(currentTime, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))
+        ),
+        Positioned(
+            top: distance.toDouble(),
+            left: 0,
+            right: 0, //1350
+            child: Container(
+              height: 2,
+              color: Colors.red,
+            )
+        ),
+        for (Event e in events) (BetterEventComponent(event: e, color: Colors.black26))
       ]
     );
+
   }
+
 }
