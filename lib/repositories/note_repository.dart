@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class NoteRepository {
 
-  static Future<bool> createEvent(Note n) async {
+  static Future<bool> createNote(Note n) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}notes";
     String? token = sp.getString('token');
@@ -16,7 +16,7 @@ class NoteRepository {
         'Authorization': 'bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode(<String, String>{
+      body: jsonEncode(<String, dynamic>{
         'day': n.day,
         'text': n.text
       }),
@@ -25,9 +25,9 @@ class NoteRepository {
     return (response.statusCode == 201);
   }
 
-  static Future<Note> getNote(String day) async {
+  static Future<Note?> getNote(String day) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
-    String? url = "${sp.getString('url')}notes/$day";
+    String? url = "${sp.getString('url')}notes/${day}";
     String? token = sp.getString('token');
 
     http.Response response = await http.get(
@@ -37,7 +37,7 @@ class NoteRepository {
         }
     );
 
-    return Note.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    return response.body == "null" ? null : Note.fromJson(jsonDecode(response.body) as Map<dynamic, dynamic>);
   }
 
   static Future<bool> updateNote(Note n) async {
@@ -59,9 +59,9 @@ class NoteRepository {
     return (response.statusCode == 202);
   }
 
-  static Future<bool> deleteNote(Note n) async {
+  static Future<bool> deleteNote(String day) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
-    String? url = "${sp.getString('url')}notes/${n.day}";
+    String? url = "${sp.getString('url')}notes/${day}";
     String? token = sp.getString('token');
 
     http.Response response = await http.delete(

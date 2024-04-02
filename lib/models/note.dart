@@ -10,7 +10,7 @@ class Note {
     required this.day
   });
 
-  factory Note.fromJson(Map<String, dynamic> json) {
+  factory Note.fromJson(Map<dynamic, dynamic> json) {
     return Note(
       day: json['day'],
       userId: json['user']['id'],

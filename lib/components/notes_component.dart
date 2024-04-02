@@ -1,3 +1,4 @@
+import 'package:day_planner/models/note.dart';
 import 'package:day_planner/repositories/note_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -35,6 +36,11 @@ class _NoteComponentState extends State<NotesComponent> {
 
     _noteBackup = noteController.text;
     _changed = false;
+  }
+
+  Future<bool> isNoteNew(DateTime day) async {
+    Note? n = await NoteRepository.getNote(DateFormat('yyyy-MM-dd').format(widget.day));
+    return n == null;
   }
 
   @override
@@ -100,8 +106,15 @@ class _NoteComponentState extends State<NotesComponent> {
                       TextButton.icon(
                         label: const Text("Sauvegarder"),
                         icon: const Icon(Icons.save),
-                        onPressed: () {
+                        onPressed: () async {
                           _changed = false;
+                          if (noteController.text.isNotEmpty) {
+                            bool isNew = await isNoteNew(widget.day);
+                            Note n = Note(day: DateFormat('yyyy-MM-dd').format(widget.day), text: noteController.text);
+                            isNew ? NoteRepository.createNote(n) : NoteRepository.updateNote(n);
+                          } else {
+                            NoteRepository.deleteNote(DateFormat('yyyy-MM-dd').format(widget.day));
+                          }
                         },
                       ),
                       TextButton.icon(
