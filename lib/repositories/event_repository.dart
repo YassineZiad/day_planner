@@ -6,9 +6,9 @@ import 'package:intl/intl.dart';
 
 class EventRepository {
 
-  static Future<List<Event>> getEvents() async {
+  static Future<List<Event>> getEventsByDate(String day) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
-    String? url = "${sp.getString('url')}events";
+    String? url = "${sp.getString('url')}events/$day";
     String? token = sp.getString('token');
 
     http.Response response = await http.get(
@@ -18,6 +18,7 @@ class EventRepository {
       }
     );
 
+    print(response.body);
     return json.decode(response.body).map((events) => Event.fromJson(events)).toList().cast<Event>();
   }
 
@@ -77,6 +78,22 @@ class EventRepository {
         'startDT': formatter.format(e.startDt),
         'endDT': formatter.format(e.endDt)
       }),
+    );
+
+    return (response.statusCode == 202);
+  }
+
+  static Future<bool> deleteNote(Event e) async {
+    SharedPreferences sp = await SharedPreferences.getInstance();
+    String? url = "${sp.getString('url')}events/${e.id}";
+    String? token = sp.getString('token');
+
+    http.Response response = await http.delete(
+        Uri.parse(url),
+        headers: <String, String> {
+          'Authorization': 'bearer $token',
+          'Content-Type': 'application/json',
+        }
     );
 
     return (response.statusCode == 204);

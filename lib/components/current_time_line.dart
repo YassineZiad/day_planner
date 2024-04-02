@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 
 class CurrentTimeLine extends StatelessWidget {
 
+  final DateTime day;
   final int distance;
   final String currentTime;
   List<Event> events;
 
   CurrentTimeLine({
     super.key,
+    required this.day,
     required this.distance,
     required this.currentTime,
     required this.events

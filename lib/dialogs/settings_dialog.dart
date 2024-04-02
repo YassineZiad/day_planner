@@ -6,8 +6,8 @@ class SettingsDialog extends StatelessWidget {
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return SimpleDialog(
-          title: const Text('Paramètres'),
+        return const SimpleDialog(
+          title: Text('Paramètres'),
           children: <Widget>[
 
           ],

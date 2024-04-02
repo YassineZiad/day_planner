@@ -16,15 +16,15 @@ class Event {
 
   factory Event.fromJson(Map<String, dynamic> json) {
     String startDt, endDt;
-    startDt = json['startDT'];
-    endDt = json['endDT'];
+    startDt = json['start_dt'];
+    endDt = json['end_dt'];
     
     return Event(
       id: json['id'],
       summary: json['summary'],
       startDt: DateTime.parse(startDt.substring(0, 19)),
       endDt: DateTime.parse(endDt.substring(0, 19)),
-      userId: json['User']['id'],
+      userId: json['user_id'],
     );
   }
 

@@ -1,24 +1,19 @@
 import 'package:flutter/material.dart';
 
-class CalendarDialog extends StatelessWidget {
+class CalendarDialog {
 
-  static Future<void> calendarDialogBuilder(BuildContext context) {
-    return showDialog<void>(
+  static void calendarDialogBuilder(BuildContext context) {
+    showDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return SimpleDialog(
-          title: const Text('Calendrier'),
+        return const SimpleDialog(
+          title: Text('Calendrier'),
           children: <Widget>[
 
           ],
         );
       },
     );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    throw UnimplementedError();
   }
 
 }

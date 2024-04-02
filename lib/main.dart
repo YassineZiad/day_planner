@@ -92,7 +92,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> getEvents() async {
     events.clear();
-    var futureEvents = EventRepository.getEvents();
+
+    var futureEvents = EventRepository.getEventsByDate(DateFormat('yyyy-MM-dd').format(_date));
     futureEvents.then((dayEvents) => events.addAll(dayEvents));
 
     SharedPreferences sp = await SharedPreferences.getInstance();
@@ -121,13 +122,24 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
         actions: [
-          IconButton(onPressed: () => CalendarDialog.calendarDialogBuilder(context), icon: const Icon(Icons.calendar_month)),
+          IconButton(
+            icon: const Icon(Icons.calendar_month),
+            tooltip: "Jour",
+            onPressed: () => {
+              CalendarDialog.calendarDialogBuilder(context),
+              _date = _date.add(const Duration(days: 1))
+            }
+          ),
           IconButton(
             icon: const Icon(Icons.account_circle),
-            tooltip: 'Se connecter',
+            tooltip: "Se connecter",
             onPressed: () => login()
           ),
-          IconButton(onPressed: () => SettingsDialog.settingsDialogBuilder(context), icon: const Icon(Icons.settings))
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: "Paramètres",
+            onPressed: () => SettingsDialog.settingsDialogBuilder(context)
+          )
         ]
       ),
 
@@ -152,19 +164,12 @@ class _MyHomePageState extends State<MyHomePage> {
           Row(
             children: [
               Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(getDateLabel(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30), locale: const Locale("fr")),
-                  CurrentTimeLine(distance: timelineDistance, currentTime: displayTime, events: events)
+                  CurrentTimeLine(day: _date, distance: timelineDistance, currentTime: displayTime, events: events)
                 ],
               ),
-              const Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  NotesComponent()
-                ],
-              )
+              NotesComponent(day: _date),
             ],
           ),
         ],
