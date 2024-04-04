@@ -101,7 +101,7 @@ class _EventComponentState extends State<EventComponent> {
                 ),
                 child: InkWell(
                     onTap: () {
-                        EventDialog(create: false, event: _event).loginDialogBuilder(context).then((value) {
+                        EventDialog(create: false, event: _event, day: _event.startDt).loginDialogBuilder(context).then((value) {
                             setState(() async {
                               _event = await EventRepository.getEventById(_event.id!);
                             });

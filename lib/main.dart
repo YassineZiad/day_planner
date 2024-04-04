@@ -2,6 +2,7 @@
 import 'package:day_planner/components/current_time_line.dart';
 import 'package:day_planner/components/expandable_fab.dart';
 import 'package:day_planner/components/notes_component.dart';
+import 'package:day_planner/models/note.dart';
 import 'package:day_planner/repositories/event_repository.dart';
 
 import 'package:flutter/material.dart';
@@ -55,34 +56,24 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
+  late bool _connected;
+
   DateTime currentTime = DateTime.now();
   String displayTime = "00:00";
   int timelineDistance = 0;
 
   late DateTime _date;
+
   List<Event> events = [];
 
   @override
   void initState() {
     super.initState();
     initSP();
-    _updateTime();
+
+    _connected = false;
 
     _date = DateTime.now();
-    var now = DateTime.now();
-    Timer.periodic(const Duration(seconds: 1), (Timer t) => _updateTime());
-  }
-
-  void _updateTime() {
-    setState(() {
-      currentTime = DateTime.now();
-
-      var currentHour = currentTime.hour < 10 ? "0${currentTime.hour}" : currentTime.hour;
-      var currentMinute = currentTime.minute < 10 ? "0${currentTime.minute}" : currentTime.minute;
-      displayTime = "$currentHour:$currentMinute";
-
-      timelineDistance = currentTime.hour * 60 + currentTime.minute;
-    });
   }
 
   String getDateLabel() {
@@ -94,11 +85,13 @@ class _MyHomePageState extends State<MyHomePage> {
     events.clear();
 
     var futureEvents = EventRepository.getEventsByDate(DateFormat('yyyy-MM-dd').format(_date));
-    futureEvents.then((dayEvents) => events.addAll(dayEvents));
+    futureEvents.then((dayEvents) => {
+      events.addAll(dayEvents),
+      setState(() {})
+    });
 
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? token = sp.getString('token');
-
 
     // if (token != null) {
     //   ScaffoldMessenger.of(context).showSnackBar(
@@ -111,7 +104,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void login() {
     LoginDialog.loginDialogBuilder(context).then((value) => {
-      getEvents()
+      _connected = true,
+      getEvents(),
+      setState(() {})
     });
   }
 
@@ -127,7 +122,12 @@ class _MyHomePageState extends State<MyHomePage> {
             tooltip: "Jour",
             onPressed: () => {
               CalendarDialog.calendarDialogBuilder(context),
-              _date = _date.add(const Duration(days: 1))
+
+              setState(() {
+                _date = _date.add(const Duration(days: 1));
+                getEvents();
+              }),
+              setState(() {})
             }
           ),
           IconButton(
@@ -151,7 +151,7 @@ class _MyHomePageState extends State<MyHomePage> {
             tooltip: "Tâche"
           ),
           ActionButton(
-            onPressed: () => EventDialog(create: true).loginDialogBuilder(context).then((v) => getEvents()),
+            onPressed: () => EventDialog(create: true, day: _date).loginDialogBuilder(context).then((v) => getEvents()),
             icon: const Icon(Icons.calendar_month_outlined),
             tooltip: "Evènement"
           )
@@ -166,10 +166,13 @@ class _MyHomePageState extends State<MyHomePage> {
               Column(
                 children: <Widget>[
                   Text(getDateLabel(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30), locale: const Locale("fr")),
-                  CurrentTimeLine(day: _date, distance: timelineDistance, currentTime: displayTime, events: events)
+                  CurrentTimeLine(day: _date, distance: timelineDistance, displayTime: displayTime, events: events)
                 ],
               ),
-              NotesComponent(day: _date),
+              if (_connected)
+              NotesComponent(day: _date)
+              else
+              const Text("Connectez-vous pour accéder à votre planner")
             ],
           ),
         ],

@@ -14,6 +14,7 @@ class NotesComponent extends StatefulWidget {
 
   @override
   _NoteComponentState createState() => _NoteComponentState();
+
 }
 
 class _NoteComponentState extends State<NotesComponent> {
@@ -31,6 +32,8 @@ class _NoteComponentState extends State<NotesComponent> {
     {
       if (value != null) {
         noteController.text = value.text
+      } else {
+        noteController.text = ""
       }
     });
 
@@ -38,8 +41,8 @@ class _NoteComponentState extends State<NotesComponent> {
     _changed = false;
   }
 
-  Future<bool> isNoteNew(DateTime day) async {
-    Note? n = await NoteRepository.getNote(DateFormat('yyyy-MM-dd').format(widget.day));
+  static Future<bool> isNoteNew(DateTime day) async {
+    Note? n = await NoteRepository.getNote(DateFormat('yyyy-MM-dd').format(day));
     return n == null;
   }
 
@@ -93,42 +96,47 @@ class _NoteComponentState extends State<NotesComponent> {
                   ],
                 ),
                 TextField(
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null,
-                  controller: noteController,
-                  onTap: () => _noteBackup = noteController.text,
-                  onChanged: (v) => _changed = true
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
+                    controller: noteController,
+                    onTap: () => _noteBackup = noteController.text,
+                    onChanged: (v) {
+                      _changed = true;
+                      setState(() {});
+                    }
                 ),
                 Visibility(
-                  visible: _changed,
-                  child: Row(
-                    children: [
-                      TextButton.icon(
-                        label: const Text("Sauvegarder"),
-                        icon: const Icon(Icons.save),
-                        onPressed: () async {
-                          _changed = false;
-                          if (noteController.text.isNotEmpty) {
-                            bool isNew = await isNoteNew(widget.day);
-                            Note n = Note(day: DateFormat('yyyy-MM-dd').format(widget.day), text: noteController.text);
-                            isNew ? NoteRepository.createNote(n) : NoteRepository.updateNote(n);
-                          } else {
-                            NoteRepository.deleteNote(DateFormat('yyyy-MM-dd').format(widget.day));
-                          }
-                        },
-                      ),
-                      TextButton.icon(
-                        label: const Text("Annuler"),
-                        icon: const Icon(Icons.undo),
-                        onPressed: () {
-                          noteController.text = _noteBackup;
-                          _changed = false;
-                        },
-                      )
-                    ],
-                  )
+                    visible: _changed,
+                    child: Row(
+                      children: [
+                        TextButton.icon(
+                          label: const Text("Sauvegarder"),
+                          icon: const Icon(Icons.save),
+                          onPressed: () async {
+                            _changed = false;
+                            if (noteController.text.isNotEmpty) {
+                              bool isNew = await isNoteNew(widget.day);
+                              Note n = Note(day: DateFormat('yyyy-MM-dd').format(widget.day), text: noteController.text);
+                              isNew ? NoteRepository.createNote(n) : NoteRepository.updateNote(n);
+                            } else {
+                              NoteRepository.deleteNote(DateFormat('yyyy-MM-dd').format(widget.day));
+                            }
+                            setState(() {});
+                          },
+                        ),
+                        TextButton.icon(
+                          label: const Text("Annuler"),
+                          icon: const Icon(Icons.undo),
+                          onPressed: () {
+                            noteController.text = _noteBackup;
+                            _changed = false;
+                            setState(() {});
+                          },
+                        )
+                      ],
+                    )
                 )
-                ]
+              ]
               )
           ),
         ]

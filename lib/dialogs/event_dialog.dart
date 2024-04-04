@@ -7,10 +7,12 @@ class EventDialog {
 
   Event? event;
   final bool create;
+  DateTime day;
 
   EventDialog({
     this.event,
-    required this.create
+    required this.create,
+    required this.day
   });
 
   static final _formKey = GlobalKey<FormState>();
@@ -61,11 +63,31 @@ class EventDialog {
           );
         }
     );
-    return pickerTime == null ? endT : pickerTime;
+    return pickerTime ?? endT; //pickerTime == null ? endT : pickerTime
   }
 
   Future<void> loginDialogBuilder(BuildContext context) {
-    DateTime dt = DateTime.now();
+    AlertDialog confirmDelete = AlertDialog(
+      title: const Text("Supprimer"),
+      content: const Text("Êtes-vous sûr de vouloir supprimer l'évènement ?"),
+      icon: const Icon(Icons.delete_forever),
+      actions: [
+        TextButton(
+          child: const Text("Annuler"),
+          onPressed:  () => Navigator.pop(context),
+        ),
+        TextButton(
+          child: const Text("Supprimer"),
+          onPressed:  () {
+            EventRepository.deleteEvent(this.event!);
+            Navigator.pop(context);
+            Navigator.pop(context);
+          },
+        )
+      ],
+    );
+
+    DateTime dt = this.day;
     TimeOfDay? startT = create ? TimeOfDay.now() : TimeOfDay(hour: event!.startDt.hour, minute: event!.startDt.minute);
     TimeOfDay? endT = create ? TimeOfDay.now() : TimeOfDay(hour: event!.endDt.hour, minute: event!.endDt.minute);
 
@@ -106,31 +128,47 @@ class EventDialog {
                           endT = await showEndTimePicker(context, endT!);
                         }
                     ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          Event e = Event(
-                            summary: summaryController.text,
-                            startDt: DateTime(dt.year, dt.month, dt.day, startT!.hour, startT!.minute),
-                            endDt: DateTime(dt.year, dt.month, dt.day, endT!.hour, endT!.minute)
-                          );
+                    Row(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (_formKey.currentState!.validate()) {
+                              Event e = Event(
+                                  summary: summaryController.text,
+                                  startDt: DateTime(dt.year, dt.month, dt.day, startT!.hour, startT!.minute),
+                                  endDt: DateTime(dt.year, dt.month, dt.day, endT!.hour, endT!.minute)
+                              );
 
-                          bool r;
-                          if (create) {
-                            r = await EventRepository.createEvent(e);
-                          } else {
-                            e.id = event!.id;
-                            r = await EventRepository.updateEvent(e);
-                          }
+                              bool r;
+                              if (create) {
+                                r = await EventRepository.createEvent(e);
+                              } else {
+                                e.id = event!.id;
+                                r = await EventRepository.updateEvent(e);
+                              }
 
-                          Navigator.pop(context);
+                              Navigator.pop(context);
 
-                          if (r) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Effectué avec succès !")));
-                          }
-                        }
-                      },
-                      child: const Text('Valider'),
+                              if (r) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Effectué avec succès !")));
+                              }
+                            }
+                          },
+                          child: const Text('Valider'),
+                        ),
+                        if (!create)
+                        ElevatedButton(
+                            onPressed: () async {
+                              showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return confirmDelete;
+                                  }
+                              );
+                            },
+                            style: const ButtonStyle(foregroundColor: MaterialStatePropertyAll<Color>(Colors.red)),
+                            child: const Text('Supprimer'))
+                      ],
                     )
                   ]
               )
