@@ -6,13 +6,13 @@ import '../models/event.dart';
 
 class EventComponent extends StatefulWidget {
 
-  late Event event;
+  late final Event event;
   final Color color;
 
   EventComponent({
     super.key,
     required this.event,
-    required this.color
+    required this.color,
   });
 
   @override
@@ -102,9 +102,12 @@ class _EventComponentState extends State<EventComponent> {
                 child: InkWell(
                     onTap: () {
                         EventDialog(create: false, event: _event, day: _event.startDt).loginDialogBuilder(context).then((value) {
-                            setState(() async {
-                              _event = await EventRepository.getEventById(_event.id!);
+                            EventRepository.getEventById(_event.id!).then((e) {
+                              setState(()  {
+                                _event = e;
+                              });
                             });
+
                         });
                     },
                     child: Column(
@@ -124,9 +127,10 @@ class _EventComponentState extends State<EventComponent> {
                                       onPressed: () {
                                         _canSave = false;
 
-                                        setState(() async {
-                                          Event e = await updateEvent(_event, _top, _height, context);
-                                          _event = e;
+                                        updateEvent(_event, _top, _height, context).then((e) {
+                                          setState(() {
+                                            _event = e;
+                                          });
                                         });
                                       }
                                   )

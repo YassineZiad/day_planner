@@ -46,7 +46,7 @@ class EventRepository {
 
   static Future<Event> getEventById(int id) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
-    String? url = "${sp.getString('url')}events/$id";
+    String? url = "${sp.getString('url')}events/id/$id";
     String? token = sp.getString('token');
 
     http.Response response = await http.get(
@@ -72,7 +72,7 @@ class EventRepository {
         'Authorization': 'bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode(<String, String>{
+      body: jsonEncode(<String, dynamic>{
         'summary': e.summary,
         'startDT': formatter.format(e.startDt),
         'endDT': formatter.format(e.endDt)

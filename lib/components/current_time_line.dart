@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:day_planner/components/day_time_line.dart';
 import 'package:day_planner/components/event_component.dart';
 import 'package:day_planner/models/event.dart';
 import 'package:flutter/material.dart';

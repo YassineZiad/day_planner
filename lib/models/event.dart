@@ -15,17 +15,14 @@ class Event {
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
-    String startDt, endDt;
-    startDt = json['start_dt'];
-    endDt = json['end_dt'];
-    
     return Event(
       id: json['id'],
       summary: json['summary'],
-      startDt: DateTime.parse(startDt.substring(0, 19)),
-      endDt: DateTime.parse(endDt.substring(0, 19)),
-      userId: json['user_id'],
+      startDt: DateTime.parse(json['startDT'].substring(0, 19)),
+      endDt: DateTime.parse(json['endDT'].substring(0, 19)),
+      userId: json['User']['id'],
     );
+
   }
 
 }
