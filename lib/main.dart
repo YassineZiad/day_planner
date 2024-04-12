@@ -63,6 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int timelineDistance = 0;
 
   late DateTime _date;
+  late NotesComponent _notesComponent;
 
   List<Event> events = [];
 
@@ -74,6 +75,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _connected = false;
 
     _date = DateTime.now();
+    _notesComponent = NotesComponent(day: _date);
   }
 
   String getDateLabel() {
@@ -120,14 +122,16 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
             icon: const Icon(Icons.calendar_month),
             tooltip: "Jour",
-            onPressed: () => {
-              CalendarDialog.calendarDialogBuilder(context),
+            onPressed: () async => {
 
-              setState(() {
-                _date = _date.add(const Duration(days: 1));
-                getEvents();
-              }),
-              setState(() {})
+              _date = (await showDialog<DateTime>(
+                context: context,
+                builder: (context) => CalendarDialog.calendarDialogBuilder(context)
+              ))!,
+
+              getEvents(),
+              _notesComponent.createState(),
+              setState(() {}),
             }
           ),
           IconButton(
@@ -170,7 +174,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),
               if (_connected)
-              NotesComponent(day: _date)
+                _notesComponent
               else
               const Text("Connectez-vous pour accéder à votre planner")
             ],
