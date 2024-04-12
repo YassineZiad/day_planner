@@ -24,10 +24,7 @@ class _NoteComponentState extends State<NotesComponent> {
   late bool _changed;
   late String _noteBackup;
 
-  @override
-  void initState() {
-    super.initState();
-
+  void initContent() {
     NoteRepository.getNote(DateFormat('yyyy-MM-dd').format(widget.day)).then((value) =>
     {
       if (value != null) {
@@ -41,6 +38,12 @@ class _NoteComponentState extends State<NotesComponent> {
     _changed = false;
   }
 
+  @override
+  void initState() {
+    super.initState();
+    initContent();
+  }
+
   static Future<bool> isNoteNew(DateTime day) async {
     Note? n = await NoteRepository.getNote(DateFormat('yyyy-MM-dd').format(day));
     return n == null;
@@ -49,6 +52,10 @@ class _NoteComponentState extends State<NotesComponent> {
   @override
   Widget build(BuildContext context) {
     double _fontSize = 20;
+
+    if (!_changed) {
+      initContent();
+    }
 
     return Container(
         margin: const EdgeInsets.only(left:30, top: 60),

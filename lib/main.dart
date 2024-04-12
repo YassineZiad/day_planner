@@ -63,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int timelineDistance = 0;
 
   late DateTime _date;
-  late NotesComponent _notesComponent;
+  late Widget _notesComponent;
 
   List<Event> events = [];
 
@@ -130,7 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ))!,
 
               getEvents(),
-              _notesComponent.createState(),
+              _notesComponent = NotesComponent(day: _date),
               setState(() {}),
             }
           ),
@@ -176,7 +176,7 @@ class _MyHomePageState extends State<MyHomePage> {
               if (_connected)
                 _notesComponent
               else
-              const Text("Connectez-vous pour accéder à votre planner")
+                const Text("Connectez-vous pour accéder à votre planner")
             ],
           ),
         ],
