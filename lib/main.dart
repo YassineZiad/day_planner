@@ -112,6 +112,15 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  pickDay() async {
+    DateTime? pickedDate = await showDialog<DateTime>(
+      context: context,
+      builder: (context) => CalendarDialog(date: _date)
+    );
+
+    _date = pickedDate ?? _date;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,10 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
             tooltip: "Jour",
             onPressed: () async => {
 
-              _date = (await showDialog<DateTime>(
-                context: context,
-                builder: (context) => CalendarDialog.calendarDialogBuilder(context)
-              ))!,
+              await pickDay(),
 
               getEvents(),
               _notesComponent = NotesComponent(day: _date),

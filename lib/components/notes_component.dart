@@ -24,6 +24,12 @@ class _NoteComponentState extends State<NotesComponent> {
   late bool _changed;
   late String _noteBackup;
 
+  @override
+  void initState() {
+    super.initState();
+    initContent();
+  }
+
   void initContent() {
     NoteRepository.getNote(DateFormat('yyyy-MM-dd').format(widget.day)).then((value) =>
     {
@@ -36,12 +42,6 @@ class _NoteComponentState extends State<NotesComponent> {
 
     _noteBackup = noteController.text;
     _changed = false;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    initContent();
   }
 
   static Future<bool> isNoteNew(DateTime day) async {
@@ -71,13 +71,12 @@ class _NoteComponentState extends State<NotesComponent> {
                     Text("\t TACHES PRIORITAIRES",
                         style: TextStyle(
                             fontSize: _fontSize, fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.start)
+                        textAlign: TextAlign.start),
                   ],
                 ),
-
               ])),
           Padding(
-              padding: const EdgeInsets.only(top: 200, left: 20),
+              padding: const EdgeInsets.only(top: 50, left: 20),
               child: Column(children: [
                 Row(
                   children: [
