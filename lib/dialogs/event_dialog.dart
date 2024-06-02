@@ -15,7 +15,7 @@ class EventDialog {
     required this.day
   });
 
-  static final _formKey = GlobalKey<FormState>();
+  static final _eventFormKey = GlobalKey<FormState>();
   static TextEditingController summaryController = TextEditingController();
 
   String getDialogTitle() {
@@ -43,7 +43,7 @@ class EventDialog {
           );
         }
     );
-    return pickerTime == null ? startT : pickerTime;
+    return pickerTime ?? startT;
   }
 
   static Future<TimeOfDay> showEndTimePicker(BuildContext context, TimeOfDay endT) async {
@@ -66,7 +66,7 @@ class EventDialog {
     return pickerTime ?? endT; //pickerTime == null ? endT : pickerTime
   }
 
-  Future<void> loginDialogBuilder(BuildContext context) {
+  Future<void> show(BuildContext context) async {
     AlertDialog confirmDelete = AlertDialog(
       title: const Text("Supprimer"),
       content: const Text("Êtes-vous sûr de vouloir supprimer l'évènement ?"),
@@ -100,7 +100,7 @@ class EventDialog {
           title: Text(getDialogTitle()),
           children: <Widget>[
             Form(
-              key: _formKey,
+              key: _eventFormKey,
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -132,7 +132,7 @@ class EventDialog {
                       children: [
                         ElevatedButton(
                           onPressed: () async {
-                            if (_formKey.currentState!.validate()) {
+                            if (_eventFormKey.currentState!.validate()) {
                               Event e = Event(
                                   summary: summaryController.text,
                                   startDt: DateTime(dt.year, dt.month, dt.day, startT!.hour, startT!.minute),
@@ -151,7 +151,10 @@ class EventDialog {
 
                               if (r) {
                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Effectué avec succès !")));
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erreur: Un évènement ne peut pas en chevaucher un autre.")));
                               }
+
                             }
                           },
                           child: const Text('Valider'),

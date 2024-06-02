@@ -1,26 +1,28 @@
 
 import 'package:day_planner/components/current_time_line.dart';
-import 'package:day_planner/components/expandable_fab.dart';
-import 'package:day_planner/components/notes_component.dart';
-import 'package:day_planner/models/note.dart';
+import 'package:day_planner/components/notes_container.dart';
 import 'package:day_planner/repositories/event_repository.dart';
+import 'package:day_planner/repositories/task_repository.dart';
+import 'package:day_planner/repositories/user_repository.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'configs/theme_config.dart';
 import 'dialogs/calendar_dialog.dart';
 import 'dialogs/login_dialog.dart';
-import 'dialogs/event_dialog.dart';
 import 'dialogs/settings_dialog.dart';
 import 'models/event.dart';
+import 'models/task.dart';
+import 'models/user.dart';
 
 void main() {
-  initializeDateFormatting('fr_FR', null).then((_) => runApp(const MyApp()));
+  initializeDateFormatting('fr_FR', null).then((_) => runApp(MyApp()));
 }
 
 void initSP() async {
@@ -29,43 +31,73 @@ void initSP() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
 
-  // This widget is the root of your application.
+  final ValueNotifier<ThemeMode> _notifier = ValueNotifier(ThemeMode.light);
+
+  MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Day Planner',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Day Planner'),
+    Icon icon = const Icon(Icons.dark_mode_outlined);
+
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: _notifier,
+      builder: (_, themeMode, __) {
+        return MaterialApp(
+          theme: DayPlannerLight().getThemeData(),
+          darkTheme: DayPlannerDark().getThemeData(),
+          themeMode: themeMode,
+          home: DayPlannerPage(
+              title: "Day Planner",
+              themeToggle: IconButton(
+                icon: icon,
+                onPressed: () => {
+                  if (themeMode == ThemeMode.light) {
+                    _notifier.value = ThemeMode.dark,
+                    icon = const Icon(Icons.light_mode_outlined)
+                  } else {
+                    _notifier.value = ThemeMode.light,
+                    icon = const Icon(Icons.dark_mode_outlined)
+                  }
+                },
+              )
+          )
+        );
+      },
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class DayPlannerPage extends StatefulWidget {
 
   final String title;
+  final Widget themeToggle;
+
+  const DayPlannerPage({
+    super.key,
+    required this.title,
+    required this.themeToggle
+  });
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _DayPlannerPageState createState() => _DayPlannerPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _DayPlannerPageState extends State<DayPlannerPage> {
 
   late bool _connected;
+  late User? _user;
 
   DateTime currentTime = DateTime.now();
   String displayTime = "00:00";
   int timelineDistance = 0;
 
   late DateTime _date;
-  late Widget _notesComponent;
+  late Widget _notesContainer;
 
   List<Event> events = [];
+  List<Task> normalTasks = [];
+  List<Task> priorityTasks = [];
 
   @override
   void initState() {
@@ -73,9 +105,10 @@ class _MyHomePageState extends State<MyHomePage> {
     initSP();
 
     _connected = false;
+    _user = null;
 
     _date = DateTime.now();
-    _notesComponent = NotesComponent(day: _date);
+    _notesContainer = NotesContainer(day: _date, normalTasks: normalTasks, priorityTasks: priorityTasks, getEvents: getEvents);
   }
 
   String getDateLabel() {
@@ -84,31 +117,56 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> getEvents() async {
-    events.clear();
+    setState(() {
+      events.clear();
+    });
 
     var futureEvents = EventRepository.getEventsByDate(DateFormat('yyyy-MM-dd').format(_date));
     futureEvents.then((dayEvents) => {
       events.addAll(dayEvents),
       setState(() {})
     });
+  }
 
-    SharedPreferences sp = await SharedPreferences.getInstance();
-    String? token = sp.getString('token');
+  Future<void> getTasks() async {
+    setState(() {
+      normalTasks.clear();
+      priorityTasks.clear();
+    });
 
-    // if (token != null) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //       const SnackBar(content: Text("e"))
-    //   );
-    //   var futureEvents = EventRepository.getEvents();
-    //   futureEvents.then((events) => events.addAll(events));
-    // }
+    var futureTasks = TaskRepository.getTasksByDate(DateFormat('yyyy-MM-dd').format(_date));
+    futureTasks.then((dayTasks) {
+      List<Task> pTasks = [], nTasks = [];
+      for (Task task in dayTasks) {
+        task.priority ? pTasks.add(task) : nTasks.add(task);
+      }
+
+      setState(() {
+        priorityTasks.addAll(pTasks) ;
+        normalTasks.addAll(nTasks);
+        _notesContainer = NotesContainer(day: _date, normalTasks: normalTasks, priorityTasks: priorityTasks, getEvents: getEvents);
+      });
+    });
   }
 
   void login() {
-    LoginDialog.loginDialogBuilder(context).then((value) => {
-      _connected = true,
-      getEvents(),
-      setState(() {})
+    LoginDialog.buildUserDialog(_user, _connected, context).then((v) async => {
+
+      if (_connected != LoginDialog.isConnected) {
+        _connected = LoginDialog.isConnected,
+        if (_connected) {
+          _user = await UserRepository.getCurrentUser(),
+          getEvents(),
+          getTasks()
+        }
+        else
+        {
+          events.clear(),
+          _user = null
+        },
+        setState(() {})
+      },
+
     });
   }
 
@@ -118,16 +176,17 @@ class _MyHomePageState extends State<MyHomePage> {
       builder: (context) => CalendarDialog(date: _date)
     );
 
-    _date = pickedDate ?? _date;
+    setState(() => _date = pickedDate ?? _date);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          backgroundColor: Theme.of(context).colorScheme.secondary,
         title: Text(widget.title),
         actions: [
+          widget.themeToggle,
           IconButton(
             icon: const Icon(Icons.calendar_month),
             tooltip: "Jour",
@@ -135,58 +194,87 @@ class _MyHomePageState extends State<MyHomePage> {
 
               await pickDay(),
 
-              getEvents(),
-              _notesComponent = NotesComponent(day: _date),
-              setState(() {}),
+              if (_connected) {
+                getEvents(),
+                getTasks(),
+                setState(() {
+                  _notesContainer = NotesContainer(day: _date, normalTasks: normalTasks, priorityTasks: priorityTasks, getEvents: getEvents);
+                })
+              }
             }
           ),
           IconButton(
             icon: const Icon(Icons.account_circle),
-            tooltip: "Se connecter",
+            tooltip: _connected ? _user!.nickname : "Se connecter",
             onPressed: () => login()
           ),
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: "Paramètres",
-            onPressed: () => SettingsDialog.settingsDialogBuilder(context)
+            onPressed: () => SettingsDialog.show(context)
+                .then((value) {
+              if(_connected) {
+                getEvents();
+                getTasks();
+              }
+            })
           )
         ]
-      ),
-
-      floatingActionButton: ExpandableFab(
-        distance: 112,
-        children: [
-          const ActionButton(
-            icon: Icon(Icons.edit_note),
-            tooltip: "Tâche"
-          ),
-          ActionButton(
-            onPressed: () => EventDialog(create: true, day: _date).loginDialogBuilder(context).then((v) => getEvents()),
-            icon: const Icon(Icons.calendar_month_outlined),
-            tooltip: "Evènement"
-          )
-        ],
       ),
       body: GridView(
         padding: const EdgeInsets.all(10),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 1),
         children: [
-          Row(
-            children: [
-              Column(
-                children: <Widget>[
-                  Text(getDateLabel(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30), locale: const Locale("fr")),
-                  CurrentTimeLine(day: _date, distance: timelineDistance, displayTime: displayTime, events: events)
-                ],
-              ),
-              if (_connected)
-                _notesComponent
-              else
-                const Text("Connectez-vous pour accéder à votre planner")
-            ],
-          ),
+          getPageLayoutByPlatform(),
         ],
       ),
     );
   }
+
+  Widget getPageLayoutByPlatform() {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return Column(
+        children: [
+          Column(
+            children: <Widget>[
+              Text(getDateLabel(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30), locale: const Locale("fr")),
+              CurrentTimeLine(day: _date, distance: timelineDistance, displayTime: displayTime, events: events, getEvents: getEvents)
+            ],
+          ),
+          if (_connected)
+            SizedBox(child: _notesContainer)
+          else
+            SizedBox(
+                width: MediaQuery.of(context).size.width / 3,
+                child: const Center(heightFactor: 0, child: Text("Connectez-vous pour accéder à votre planner"))
+            )
+        ],
+      );
+    } else if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
+      return Row(
+        children: [
+          Column(
+            children: <Widget>[
+              Text(getDateLabel(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30), locale: const Locale("fr")),
+              Expanded(
+                  child: SingleChildScrollView(
+                    child: CurrentTimeLine(day: _date, distance: timelineDistance, displayTime: displayTime, events: events, getEvents: getEvents),
+                  )
+              )
+            ],
+          ),
+          if (_connected)
+            _notesContainer
+          else
+            SizedBox(
+                width: MediaQuery.of(context).size.width / 3,
+                child: const Center(heightFactor: 0, child: Text("Connectez-vous pour accéder à votre planner"))
+            )
+        ],
+      );
+    } else {
+      return const Text("Désolé. L'application DayPlanner n'est pas disponible sur votre plateforme.");
+    }
+  }
+
 }

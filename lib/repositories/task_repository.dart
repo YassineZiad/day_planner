@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 
 class TaskRepository {
 
-  static Future<bool> createTask(Task t) async {
+  static Future<Task> createTask(Task t) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}tasks";
     String? token = sp.getString('token');
@@ -19,12 +19,13 @@ class TaskRepository {
       },
       body: jsonEncode(<String, dynamic>{
         'label': t.label,
+        'done' : t.done,
         'priority': t.priority,
         'day': t.day
       }),
     );
 
-    return (response.statusCode == 201);
+    return Task.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   static Future<List<Task>> getTasksByDate(String day) async {
@@ -33,10 +34,10 @@ class TaskRepository {
     String? token = sp.getString('token');
 
     http.Response response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'bearer $token',
-        }
+      Uri.parse(url),
+      headers: {
+        'Authorization': 'bearer $token',
+      }
     );
 
     return json.decode(response.body).map((tasks) => Task.fromJson(tasks)).toList().cast<Task>();
@@ -70,6 +71,7 @@ class TaskRepository {
       },
       body: jsonEncode(<String, dynamic>{
         'label': t.label,
+        'done' : t.done,
         'priority': t.priority,
         'day': t.day
       }),

@@ -1,8 +1,12 @@
 import 'dart:async';
 
-import 'package:day_planner/components/event_component.dart';
-import 'package:day_planner/models/event.dart';
+import 'package:day_planner/configs/theme_config.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+
+import '../components/event_component.dart';
+import '../configs/app_config.dart';
+import '../models/event.dart';
 
 @immutable
 class CurrentTimeLine extends StatefulWidget {
@@ -12,12 +16,15 @@ class CurrentTimeLine extends StatefulWidget {
   final String displayTime;
   final List<Event> events;
 
+  final Function getEvents;
+
   const CurrentTimeLine({
     super.key,
     required this.day,
     required this.distance,
     required this.displayTime,
-    required this.events
+    required this.events,
+    required this.getEvents
   });
 
   @override
@@ -47,11 +54,11 @@ class _CurrentTimeLineState extends State<CurrentTimeLine> {
     setState(() {
       currentTime = DateTime.now();
 
-      var currentHour = currentTime.hour < 10 ? "0${currentTime.hour}" :currentTime.hour;
+      var currentHour = currentTime.hour < 10 ? "0${currentTime.hour}" : currentTime.hour;
       var currentMinute = currentTime.minute < 10 ? "0${currentTime.minute}" : currentTime.minute;
       displayTime = "$currentHour:$currentMinute";
 
-      distance = currentTime.hour * 60 + currentTime.minute;
+      distance = currentTime.hour * AppConfig.hourRowSize + currentTime.minute * (AppConfig.hourRowSize ~/ 60);
     });
   }
 
@@ -59,18 +66,20 @@ class _CurrentTimeLineState extends State<CurrentTimeLine> {
     return (i < 10) ? '0$i:00' : '$i:00';
   }
 
+  static BorderSide getBorderSide(BuildContext context) => BorderSide(color: Theme.of(context).extension<Palette>()!.quinary);
+
   BoxDecoration getHourRowDecoration(int i) {
-    var border = const Border(top: BorderSide(), left: BorderSide());
+    var border = Border(top: getBorderSide(context), left: getBorderSide(context));
     if (i == 23) {
-      border = const Border(top: BorderSide(), left: BorderSide(), bottom: BorderSide());
+      border = Border(top: getBorderSide(context), left: getBorderSide(context), bottom: getBorderSide(context));
     }
     return BoxDecoration(border: border);
   }
 
   BoxDecoration getEventRowDecoration(int i) {
-    var border = const Border(top: BorderSide(), left: BorderSide(), right: BorderSide());
+    var border = Border(top: getBorderSide(context), left: getBorderSide(context), right: getBorderSide(context));
     if (i == 23) {
-      border = const Border(top: BorderSide(), left: BorderSide(), right: BorderSide(), bottom: BorderSide());
+      border = Border(top: getBorderSide(context), left: getBorderSide(context), right: getBorderSide(context), bottom: getBorderSide(context));
     }
     return BoxDecoration(border: border);
   }
@@ -79,12 +88,13 @@ class _CurrentTimeLineState extends State<CurrentTimeLine> {
   Widget build(BuildContext context) {
     return Stack(
         children: <Widget>[
-          Container(
+          for (Event e in widget.events) (EventComponent(event: e, getEvents: widget.getEvents)),
+          IgnorePointer(child: Container(
               padding: const EdgeInsets.all(0),
               child: Table(
                 columnWidths: <int, TableColumnWidth>{
                   0: const FixedColumnWidth(120),
-                  1: FixedColumnWidth(MediaQuery.of(context).size.width / 2)
+                  1: FixedColumnWidth(AppConfig.eventsColumnWidth(context))
                 },
                 defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                 children: <TableRow>[
@@ -96,7 +106,7 @@ class _CurrentTimeLineState extends State<CurrentTimeLine> {
                             verticalAlignment: TableCellVerticalAlignment.top,
                             child: Container(
                               // Hours
-                                height: 60,
+                                height: AppConfig.hourRowSize.toDouble(),
                                 width: 100,
                                 decoration: getHourRowDecoration(i),
                                 child: Text(showHours(i),
@@ -105,26 +115,26 @@ class _CurrentTimeLineState extends State<CurrentTimeLine> {
                             verticalAlignment: TableCellVerticalAlignment.top,
                             child: Container(
                               // Events
-                                height: 60,
+                                height: AppConfig.hourRowSize.toDouble(),
                                 width: 900,
                                 decoration: getEventRowDecoration(i))),
                       ],
                     )
                 ],
               )
-          ),
+          )),
           Positioned(
               top: distance.toDouble(),
               right: 5,
               child: Text(displayTime, style: TextStyle(
-                  foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = 3..color = Colors.white,
+                  foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = 3..color = Theme.of(context).extension<Palette>()!.background,
                   fontWeight: FontWeight.bold
               ))
           ),
           Positioned(
               top: distance.toDouble(),
               right: 5,
-              child: Text(displayTime, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))
+              child: Text(displayTime, style: TextStyle(color: Theme.of(context).extension<Palette>()!.darkKey, fontWeight: FontWeight.bold))
           ),
           Positioned(
               top: distance.toDouble(),
@@ -132,49 +142,10 @@ class _CurrentTimeLineState extends State<CurrentTimeLine> {
               right: 0, //1350
               child: Container(
                 height: 2,
-                color: Colors.red,
+                color: Theme.of(context).extension<Palette>()!.darkKey,
               )
           ),
-          for (Event e in widget.events) (EventComponent(event: e, color: Colors.black26))
         ]
     );
-
   }
 }
-
-/*
-Positioned(
-    top: distance.toDouble(),
-    right: 5,
-    child: Text(displayTime, style: TextStyle(
-        foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = 3..color = Colors.white,
-        fontWeight: FontWeight.bold
-    ))
-),
-Positioned(
-    top: distance.toDouble(),
-    right: 5,
-    child: Text(displayTime, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))
-),
-Positioned(
-    top: distance.toDouble(),
-    left: 0,
-    right: 0, //1350
-    child: Container(
-      height: 2,
-      color: Colors.red,
-    )
-)
-
-
-Text(displayTime, style: TextStyle(
-      foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = 3..color = Colors.white,
-      fontWeight: FontWeight.bold
-    )
-),
-Text(displayTime, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-Container(
-  height: 2,
-  color: Colors.red,
-)
- */
