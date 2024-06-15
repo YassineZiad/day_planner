@@ -23,7 +23,7 @@ class EventRepository {
         'summary': e.summary,
         'startDT': formatter.format(e.startDt),
         'endDT': formatter.format(e.endDt)
-      }),
+      })
     );
 
     return (response.statusCode == 201);
@@ -44,7 +44,7 @@ class EventRepository {
     return json.decode(response.body).map((events) => Event.fromJson(events)).toList().cast<Event>();
   }
 
-  static Future<Event> getEventById(int id) async {
+  static Future<Event?> getEventById(int id) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}events/id/$id";
     String? token = sp.getString('token');
@@ -56,7 +56,7 @@ class EventRepository {
         }
     );
 
-    return Event.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    return response.statusCode == 404 ? null : Event.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   static Future<bool> updateEvent(Event e) async {
@@ -82,6 +82,51 @@ class EventRepository {
     return (response.statusCode == 202);
   }
 
+  static Future<bool> updateEventReplace(Event newEvent, Event oldEvent) async {
+    SharedPreferences sp = await SharedPreferences.getInstance();
+    String? url = "${sp.getString('url')}events/updateReplace/${oldEvent.id}";
+    String? token = sp.getString('token');
+
+    final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+
+    http.Response response = await http.post(
+        Uri.parse(url),
+        headers: <String, String> {
+          'Authorization': 'bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(<String, String>{
+          'summary': newEvent.summary,
+          'startDT': formatter.format(newEvent.startDt),
+          'endDT': formatter.format(newEvent.endDt)
+        })
+    );
+
+    return (response.statusCode == 201);
+  }
+
+  static Future<bool> updateEventMove(Event e) async {
+    SharedPreferences sp = await SharedPreferences.getInstance();
+    String? url = "${sp.getString('url')}events/updateMove/${e.id}";
+    String? token = sp.getString('token');
+
+    final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+
+    http.Response response = await http.post(
+        Uri.parse(url),
+        headers: <String, String> {
+          'Authorization': 'bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(<String, String>{
+          'startDT': formatter.format(e.startDt),
+          'endDT': formatter.format(e.endDt)
+        })
+    );
+
+    return (response.statusCode == 201);
+  }
+
   static Future<bool> deleteEvent(Event e) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}events/${e.id}";
@@ -95,7 +140,7 @@ class EventRepository {
         }
     );
 
-    return (response.statusCode == 204);
+    return (response.statusCode == 201);
   }
 
 }

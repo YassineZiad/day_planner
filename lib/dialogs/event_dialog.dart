@@ -1,6 +1,8 @@
+import 'package:day_planner/dialogs/event_update_dialog.dart';
 import 'package:day_planner/repositories/event_repository.dart';
 import 'package:flutter/material.dart';
 
+import '../configs/theme_config.dart';
 import '../models/event.dart';
 
 class EventDialog {
@@ -16,7 +18,7 @@ class EventDialog {
   });
 
   static final _eventFormKey = GlobalKey<FormState>();
-  static TextEditingController summaryController = TextEditingController();
+  static final TextEditingController _summaryController = TextEditingController();
 
   String getDialogTitle() {
     return create ? "Créer un évènement" : "Modifier un évènement";
@@ -77,6 +79,7 @@ class EventDialog {
           onPressed:  () => Navigator.pop(context),
         ),
         TextButton(
+          style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).extension<Palette>()!.cancelled)),
           child: const Text("Supprimer"),
           onPressed:  () {
             EventRepository.deleteEvent(this.event!);
@@ -91,7 +94,7 @@ class EventDialog {
     TimeOfDay? startT = create ? TimeOfDay.now() : TimeOfDay(hour: event!.startDt.hour, minute: event!.startDt.minute);
     TimeOfDay? endT = create ? TimeOfDay.now() : TimeOfDay(hour: event!.endDt.hour, minute: event!.endDt.minute);
 
-    summaryController.text = loadSummary();
+    _summaryController.text = loadSummary();
 
     return showDialog<void>(
       context: context,
@@ -106,7 +109,7 @@ class EventDialog {
                   children: [
                     TextFormField(
                       decoration: const InputDecoration(labelText: 'Titre'),
-                      controller: summaryController,
+                      controller: _summaryController,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Saisir un titre';
@@ -134,7 +137,7 @@ class EventDialog {
                           onPressed: () async {
                             if (_eventFormKey.currentState!.validate()) {
                               Event e = Event(
-                                  summary: summaryController.text,
+                                  summary: _summaryController.text,
                                   startDt: DateTime(dt.year, dt.month, dt.day, startT!.hour, startT!.minute),
                                   endDt: DateTime(dt.year, dt.month, dt.day, endT!.hour, endT!.minute)
                               );
@@ -160,7 +163,7 @@ class EventDialog {
                           child: const Text('Valider'),
                         ),
                         if (!create)
-                        ElevatedButton(
+                          ElevatedButton(
                             onPressed: () async {
                               showDialog(
                                   context: context,
@@ -169,8 +172,9 @@ class EventDialog {
                                   }
                               );
                             },
-                            style: const ButtonStyle(foregroundColor: MaterialStatePropertyAll<Color>(Colors.red)),
-                            child: const Text('Supprimer'))
+                            style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).extension<Palette>()!.cancelled)),
+                            child: const Text('Supprimer')
+                          )
                       ],
                     )
                   ]

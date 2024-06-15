@@ -1,3 +1,4 @@
+import 'package:day_planner/dialogs/event_update_dialog.dart';
 import 'package:flutter/material.dart';
 
 import '../configs/app_config.dart';
@@ -24,10 +25,9 @@ class EventComponent extends StatefulWidget {
 class _EventComponentState extends State<EventComponent> {
 
   late Event _event;
-  late double _height;
-  late double _top;
-  late double _width;
+  late double _height, _top, _width;
   late bool _canSave;
+  late bool _hasBeenExtended, _hasBeenDeplaced;
 
   double getTimePeriod() {
     double startTime = (_event.startDt.hour * AppConfig.hourRowSize + _event.startDt.minute).toDouble();
@@ -35,7 +35,7 @@ class _EventComponentState extends State<EventComponent> {
     return endTime - startTime;
   }
 
-  Future<Event> updateEvent(Event event, double top, double height, BuildContext context) async {
+  Event getEventTimeRange(Event event, double top, double height, BuildContext context) {
 
     TimeOfDay startT = TimeOfDay(
         hour: top ~/ AppConfig.hourRowSize,
@@ -59,6 +59,10 @@ class _EventComponentState extends State<EventComponent> {
       endDt: newEndDt
     );
 
+    return e;
+  }
+
+  Future<Event> updateEvent(e) async {
     bool r = await EventRepository.updateEvent(e);
     if (r) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Changement sauvegardé !")));
@@ -80,6 +84,9 @@ class _EventComponentState extends State<EventComponent> {
     _width = 600;
 
     _canSave = false;
+
+    _hasBeenDeplaced = false;
+    _hasBeenExtended = false;
   }
 
   @override
@@ -91,9 +98,12 @@ class _EventComponentState extends State<EventComponent> {
         left: 120,
         child: GestureDetector(
             onVerticalDragUpdate: (details) {
+              // DEPLACEMENT
               setState(() {
                 _top += details.delta.dy;
                 _canSave = true;
+
+                _hasBeenDeplaced = true;
               });
             },
             child: Container(
@@ -111,9 +121,9 @@ class _EventComponentState extends State<EventComponent> {
                     onTap: () {
                         EventDialog(create: false, event: _event, day: _event.startDt).show(context).then((v) {
                             EventRepository.getEventById(_event.id!).then((e) {
-                              setState(()  {
-                                _event = e;
-                              });
+                              if (e != null) {
+                                setState(()  {_event = e;});
+                              }
                               widget.getEvents();
                             });
 
@@ -125,7 +135,7 @@ class _EventComponentState extends State<EventComponent> {
                           Row(
                             children: [
                               Text(_event.summary,
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: Theme.of(context).extension<Palette>()!.lightKey, fontWeight: FontWeight.bold),
                                   textAlign: TextAlign.start
                               ),
                               Visibility(
@@ -134,13 +144,19 @@ class _EventComponentState extends State<EventComponent> {
                                       icon: const Icon(Icons.save),
                                       iconSize: 20,
                                       onPressed: () {
-                                        _canSave = false;
-
-                                        updateEvent(_event, _top, _height, context).then((e) {
-                                          setState(() {
-                                            _event = e;
+                                        if (_hasBeenDeplaced && !_hasBeenExtended) {
+                                          EventUpdateDialog.show(getEventTimeRange(_event, _top, _height, context), _event, context).then((e) {
+                                            widget.getEvents();
                                           });
-                                        });
+                                        } else {
+                                          updateEvent(getEventTimeRange(_event, _top, _height, context)).then((e) {
+                                            setState(() {
+                                              _event = e;
+                                            });
+                                          });
+                                        }
+
+                                        _canSave = false;
                                       }
                                   )
                               )
@@ -148,9 +164,11 @@ class _EventComponentState extends State<EventComponent> {
                           ),
                           GestureDetector(
                               onVerticalDragUpdate: (details) {
+                                // EXTENSION
                                 setState(() {
                                   _height += details.delta.dy;
                                   _canSave = true;
+                                  _hasBeenExtended = true;
                                 });
                               },
                               child: const Icon(Icons.keyboard_arrow_down)

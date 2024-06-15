@@ -2,7 +2,7 @@
 class Event {
   int? id;
   int? userId;
-  final String summary;
+  late final String summary;
   final DateTime startDt;
   final DateTime endDt;
 

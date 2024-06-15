@@ -1,9 +1,12 @@
 
+import 'dart:io';
+
 import 'package:day_planner/components/current_time_line.dart';
 import 'package:day_planner/components/notes_container.dart';
 import 'package:day_planner/repositories/event_repository.dart';
 import 'package:day_planner/repositories/task_repository.dart';
 import 'package:day_planner/repositories/user_repository.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
@@ -17,11 +20,13 @@ import 'configs/theme_config.dart';
 import 'dialogs/calendar_dialog.dart';
 import 'dialogs/login_dialog.dart';
 import 'dialogs/settings_dialog.dart';
+import 'extensions/custom_http_overrides.dart';
 import 'models/event.dart';
 import 'models/task.dart';
 import 'models/user.dart';
 
 void main() {
+  HttpOverrides.global = CustomHttpOverrides();
   initializeDateFormatting('fr_FR', null).then((_) => runApp(MyApp()));
 }
 
@@ -86,6 +91,7 @@ class DayPlannerPage extends StatefulWidget {
 class _DayPlannerPageState extends State<DayPlannerPage> {
 
   late bool _connected;
+  late bool _showNotes;
   late User? _user;
 
   DateTime currentTime = DateTime.now();
@@ -105,6 +111,7 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
     initSP();
 
     _connected = false;
+    _showNotes = false;
     _user = null;
 
     _date = DateTime.now();
@@ -162,7 +169,8 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
         else
         {
           events.clear(),
-          _user = null
+          _user = null,
+          _showNotes = false
         },
         setState(() {})
       },
@@ -182,6 +190,7 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.secondary,
         title: Text(widget.title),
@@ -221,13 +230,7 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
           )
         ]
       ),
-      body: GridView(
-        padding: const EdgeInsets.all(10),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 1),
-        children: [
-          getPageLayoutByPlatform(),
-        ],
-      ),
+      body: getPageLayoutByPlatform(),
     );
   }
 
@@ -235,41 +238,56 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
     if (defaultTargetPlatform == TargetPlatform.android) {
       return Column(
         children: [
-          Column(
-            children: <Widget>[
-              Text(getDateLabel(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30), locale: const Locale("fr")),
-              CurrentTimeLine(day: _date, distance: timelineDistance, displayTime: displayTime, events: events, getEvents: getEvents)
-            ],
-          ),
-          if (_connected)
-            SizedBox(child: _notesContainer)
+          Center(child: Text(getDateLabel(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30), locale: const Locale("fr"))),
+          if (!_connected)
+            const Center(child: Text("Connectez-vous pour accéder à votre planner"))
           else
-            SizedBox(
-                width: MediaQuery.of(context).size.width / 3,
-                child: const Center(heightFactor: 0, child: Text("Connectez-vous pour accéder à votre planner"))
+            Center(
+              child: ElevatedButton.icon(
+                icon: Icon(_showNotes ? Icons.calendar_today : Icons.notes),
+                label: Text(_showNotes ? "Evènements" : "Tâches"),
+                onPressed: ()  {
+                  setState(() {
+                    _showNotes = !_showNotes;
+                  });
+                },
+              )),
+          if (!_showNotes || !_connected)
+            Expanded(
+                child: SingleChildScrollView(
+                    child: Expanded(child: CurrentTimeLine(day: _date, distance: timelineDistance, displayTime: displayTime, events: events, getEvents: getEvents))
+                )
             )
+          else if (_showNotes && _connected)
+            _notesContainer
         ],
       );
     } else if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
-      return Row(
+      return GridView(
+        padding: const EdgeInsets.all(10),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 1),
         children: [
-          Column(
-            children: <Widget>[
-              Text(getDateLabel(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30), locale: const Locale("fr")),
-              Expanded(
-                  child: SingleChildScrollView(
-                    child: CurrentTimeLine(day: _date, distance: timelineDistance, displayTime: displayTime, events: events, getEvents: getEvents),
+          Row(
+            children: [
+              Column(
+                children: <Widget>[
+                  Text(getDateLabel(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30), locale: const Locale("fr")),
+                  Expanded(
+                      child: SingleChildScrollView(
+                        child: CurrentTimeLine(day: _date, distance: timelineDistance, displayTime: displayTime, events: events, getEvents: getEvents),
+                      )
                   )
-              )
+                ],
+              ),
+              if (_connected)
+                _notesContainer
+              else
+                SizedBox(
+                    width: MediaQuery.of(context).size.width / 3,
+                    child: const Center(heightFactor: 0, child: Text("Connectez-vous pour accéder à votre planner"))
+                )
             ],
           ),
-          if (_connected)
-            _notesContainer
-          else
-            SizedBox(
-                width: MediaQuery.of(context).size.width / 3,
-                child: const Center(heightFactor: 0, child: Text("Connectez-vous pour accéder à votre planner"))
-            )
         ],
       );
     } else {

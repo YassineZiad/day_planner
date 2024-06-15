@@ -4,6 +4,7 @@ import 'package:day_planner/models/note.dart';
 import 'package:day_planner/models/task.dart';
 import 'package:day_planner/repositories/note_repository.dart';
 import 'package:day_planner/repositories/task_repository.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -48,12 +49,13 @@ class _NotesContainerState extends State<NotesContainer> {
   }
 
   void initContent() {
-    NoteRepository.getNote(DateFormat('yyyy-MM-dd').format(widget.day)).then((value) =>
+    NoteRepository.getNote(DateFormat('yyyy-MM-dd').format(widget.day)).then((value)
     {
       if (value != null) {
-        noteController.text = value.text
+        noteController.text = value.text;
       } else {
-        noteController.text = ""
+        print("on vide");
+        noteController.text = "";
       }
     });
 
@@ -75,9 +77,8 @@ class _NotesContainerState extends State<NotesContainer> {
     }
 
     return Container(
-        margin: const EdgeInsets.only(left:30, top: 60),
-        width: MediaQuery.of(context).size.width / 3,
-        //decoration: const BoxDecoration(border: Border(top: BorderSide(), left: BorderSide(), right: BorderSide(), bottom: BorderSide())),
+        margin: defaultTargetPlatform == TargetPlatform.android ? const EdgeInsets.only(top: 60) : const EdgeInsets.only(left:30, top: 60),
+        width: defaultTargetPlatform == TargetPlatform.android ? MediaQuery.of(context).size.width : MediaQuery.of(context).size.width / 3,
         child: Column(children: [
 
           // Ajout Tâche
