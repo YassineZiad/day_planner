@@ -1,7 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import "package:day_planner/extensions/string_extension.dart";
 
+import 'package:intl/intl.dart';
+
+import "package:day_planner/extensions/object_extension.dart";
+import 'package:day_planner/configs/app_config.dart';
+
+/// Dialog de sélection de la date.
+///
+/// Date selection dialog.
 class CalendarDialog extends StatefulWidget {
 
   final DateTime date;
@@ -15,16 +22,19 @@ class CalendarDialog extends StatefulWidget {
   State createState() => _CalendarDialogState();
 }
 
+/// Etat de [CalendarDialog].
+///
+/// State of [CalendarDialog].
 class _CalendarDialogState extends State<CalendarDialog> {
 
   late DateTime? _date;
   late bool _dateChanged;
 
-  final TextEditingController monthController = TextEditingController();
+  final TextEditingController _monthController = TextEditingController();
   late int? _selectedMonth;
   late List<DropdownMenuEntry<int>> _monthsEntries;
 
-  final TextEditingController yearController = TextEditingController();
+  final TextEditingController _yearController = TextEditingController();
   late int? _selectedYear;
   late List<DropdownMenuEntry<int>> _yearsEntries;
 
@@ -41,6 +51,9 @@ class _CalendarDialogState extends State<CalendarDialog> {
     _selectedYear = _date!.year;
   }
 
+  /// Retourne tous les mois de l'année en français.
+  ///
+  /// Returns every month in french locale.
   static List<DropdownMenuEntry<int>> getMonths() {
     List<DropdownMenuEntry<int>> months = [];
     for (int month = 1; month <= 12; month++) {
@@ -52,6 +65,9 @@ class _CalendarDialogState extends State<CalendarDialog> {
     return months;
   }
 
+  /// Retourne les 25 années avant et après l'année actuelle.
+  ///
+  /// Returns the 25 years before and after the current year.
   static List<DropdownMenuEntry<int>> getYears() {
     List<DropdownMenuEntry<int>> years = [];
     for (int year = (DateTime.now().year - 25); year <= (DateTime.now().year + 25); year++) {
@@ -72,7 +88,7 @@ class _CalendarDialogState extends State<CalendarDialog> {
           children: [
             DropdownMenu<int>(
               initialSelection: _selectedMonth,
-              controller: monthController,
+              controller: _monthController,
               requestFocusOnTap: true,
               label: const Text('Mois'),
               onSelected: (int? month) {
@@ -85,7 +101,7 @@ class _CalendarDialogState extends State<CalendarDialog> {
             ),
             DropdownMenu<int>(
               initialSelection: _selectedYear,
-              controller: yearController,
+              controller: _yearController,
               requestFocusOnTap: true,
               label: const Text('Année'),
               onSelected: (int? year) {
@@ -113,6 +129,9 @@ class _CalendarDialogState extends State<CalendarDialog> {
     );
   }
 
+  /// Retourne une liste de [OutlinedButton] correspondant aux jours du mois sélectionné.
+  ///
+  /// Returns a lit of [OutlinedButton] containing the day of selected month.
   static List<Widget> getMonthDays(DateTime date, BuildContext context) {
     int nbDays = DateUtils.getDaysInMonth(date.year, date.month);
 
@@ -122,6 +141,7 @@ class _CalendarDialogState extends State<CalendarDialog> {
     DateTime firstMonthDay = DateTime(date.year, date.month, 1);
     int firstMonthDayInWeek = 7 - firstMonthDay.weekday + 1;
     var dateBefore = firstMonthDay.add(Duration(days: -(7 - firstMonthDayInWeek)));
+
 
     for (int daysBeforeFirst = 0; daysBeforeFirst < (7 - firstMonthDayInWeek); daysBeforeFirst++) {
       var day = dateBefore.day + daysBeforeFirst;
@@ -142,7 +162,10 @@ class _CalendarDialogState extends State<CalendarDialog> {
                   DateTime(date.year, date.month, d)
               );
             },
-            child: Text(d < 10 ? "0$d": "$d"),
+            child: Text(
+                d.asTimeString(),
+                style: defaultTargetPlatform == TargetPlatform.android ? TextStyle(fontSize: DayPlannerConfig.fontSizeS) : null
+            ),
           )
       );
 
@@ -163,7 +186,9 @@ class _CalendarDialogState extends State<CalendarDialog> {
           weekDays.add(
               OutlinedButton(
                 onPressed: null,
-                child: Text(daysAfterLast < 10 ? "0$daysAfterLast": "$daysAfterLast"),
+                child: Text(
+                    daysAfterLast.asTimeString(),
+                    style: defaultTargetPlatform == TargetPlatform.android ? TextStyle(fontSize: DayPlannerConfig.fontSizeS) : null),
               )
           );
         }

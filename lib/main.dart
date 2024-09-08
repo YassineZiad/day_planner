@@ -1,4 +1,3 @@
-
 import 'dart:io';
 
 import 'package:day_planner/components/current_time_line.dart';
@@ -6,37 +5,52 @@ import 'package:day_planner/components/notes_container.dart';
 import 'package:day_planner/repositories/event_repository.dart';
 import 'package:day_planner/repositories/task_repository.dart';
 import 'package:day_planner/repositories/user_repository.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'dart:async';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'configs/theme_config.dart';
-import 'dialogs/calendar_dialog.dart';
-import 'dialogs/login_dialog.dart';
-import 'dialogs/settings_dialog.dart';
-import 'extensions/custom_http_overrides.dart';
-import 'models/event.dart';
-import 'models/task.dart';
-import 'models/user.dart';
+import 'package:day_planner/configs/theme_config.dart';
+import 'package:day_planner/dialogs/calendar_dialog.dart';
+import 'package:day_planner/dialogs/login_dialog.dart';
+import 'package:day_planner/dialogs/settings_dialog.dart';
+import 'package:day_planner/extensions/custom_http_overrides.dart';
+import 'package:day_planner/models/event.dart';
+import 'package:day_planner/models/task.dart';
+import 'package:day_planner/models/user.dart';
 
+/// Lancement de l'application
+///
+/// Application launch
 void main() {
   HttpOverrides.global = CustomHttpOverrides();
   initializeDateFormatting('fr_FR', null).then((_) => runApp(MyApp()));
 }
 
+/// Initialise les [SharedPreferences]
+///
+/// Initialize [SharedPreferences]
 void initSP() async {
   SharedPreferences sp = await SharedPreferences.getInstance();
-  sp.setString('url', "https://localhost:8000/api/");
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    sp.setString('url', "https://192.168.237.112:8000/api/");
+  }
+  else {
+    sp.setString('url', "https://localhost:8000/api/");
+  }
 }
 
+/// [Widget] racine de l'application DayPlanner
+///
+/// Root [Widget] of DayPlanner app
 class MyApp extends StatelessWidget {
 
+  // Permet de changer le thème
+  // Enables theme switching
   final ValueNotifier<ThemeMode> _notifier = ValueNotifier(ThemeMode.light);
 
   MyApp({super.key});
@@ -73,6 +87,9 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// [Widget] principal de l'application DayPlanner où sont contenus tous les autres composants
+///
+/// Main [Widget] of DayPlanner app containing all the app components
 class DayPlannerPage extends StatefulWidget {
 
   final String title;
@@ -88,6 +105,9 @@ class DayPlannerPage extends StatefulWidget {
   _DayPlannerPageState createState() => _DayPlannerPageState();
 }
 
+/// Etat de [DayPlannerPage]
+///
+/// State of [DayPlannerPage]
 class _DayPlannerPageState extends State<DayPlannerPage> {
 
   late bool _connected;
@@ -118,11 +138,17 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
     _notesContainer = NotesContainer(day: _date, normalTasks: normalTasks, priorityTasks: priorityTasks, getEvents: getEvents);
   }
 
+  /// Retourne la date sélectionnée ou par défaut en français sous [String]
+  ///
+  /// Returns selected or default date as [String] with french locale
   String getDateLabel() {
     final DateFormat formatter = DateFormat('EEEE dd LLLL yyyy', "fr");
     return formatter.format(_date);
   }
 
+  /// Chargement des évènements
+  ///
+  /// Events load
   Future<void> getEvents() async {
     setState(() {
       events.clear();
@@ -135,6 +161,9 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
     });
   }
 
+  /// Chargement des tâches
+  ///
+  /// Tasks loading
   Future<void> getTasks() async {
     setState(() {
       normalTasks.clear();
@@ -156,6 +185,9 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
     });
   }
 
+  /// Lance [LoginUserDialog] et connecte l'utilisateur si ses identifiants sont correctes
+  ///
+  /// Launches [LoginUserDialog] and connects the user if his credentials are corrects
   void login() {
     LoginDialog.buildUserDialog(_user, _connected, context).then((v) async => {
 
@@ -178,6 +210,9 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
     });
   }
 
+  /// Permet à l'utilisateur de choisir un jour
+  ///
+  /// User can choose day to display
   pickDay() async {
     DateTime? pickedDate = await showDialog<DateTime>(
       context: context,
@@ -234,13 +269,17 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
     );
   }
 
+  /// Affiche le rendu de la page pour l'utilisateur en fonction de la plateforme utilisée
+  ///
+  /// Displays page layout according to the used platform
   Widget getPageLayoutByPlatform() {
+    // Android
     if (defaultTargetPlatform == TargetPlatform.android) {
       return Column(
         children: [
           Center(child: Text(getDateLabel(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30), locale: const Locale("fr"))),
           if (!_connected)
-            const Center(child: Text("Connectez-vous pour accéder à votre planner"))
+            const Center(child: Text("Connectez-vous pour accéder à votre planner."))
           else
             Center(
               child: ElevatedButton.icon(
@@ -255,13 +294,14 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
           if (!_showNotes || !_connected)
             Expanded(
                 child: SingleChildScrollView(
-                    child: Expanded(child: CurrentTimeLine(day: _date, distance: timelineDistance, displayTime: displayTime, events: events, getEvents: getEvents))
+                    child: Expanded(child: CurrentTimeLine(day: _date, events: events, getEvents: getEvents))
                 )
             )
           else if (_showNotes && _connected)
             _notesContainer
         ],
       );
+    // Web - Windows
     } else if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
       return GridView(
         padding: const EdgeInsets.all(10),
@@ -274,7 +314,7 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
                   Text(getDateLabel(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30), locale: const Locale("fr")),
                   Expanded(
                       child: SingleChildScrollView(
-                        child: CurrentTimeLine(day: _date, distance: timelineDistance, displayTime: displayTime, events: events, getEvents: getEvents),
+                        child: CurrentTimeLine(day: _date, events: events, getEvents: getEvents),
                       )
                   )
                 ],
@@ -284,14 +324,15 @@ class _DayPlannerPageState extends State<DayPlannerPage> {
               else
                 SizedBox(
                     width: MediaQuery.of(context).size.width / 3,
-                    child: const Center(heightFactor: 0, child: Text("Connectez-vous pour accéder à votre planner"))
+                    child: const Center(heightFactor: 0, child: Text("Connectez-vous pour accéder à votre planner."))
                 )
             ],
           ),
         ],
       );
+    // Autres - Others
     } else {
-      return const Text("Désolé. L'application DayPlanner n'est pas disponible sur votre plateforme.");
+      return const Center(child: Text("Désolé. L'application DayPlanner n'est pas disponible sur votre plateforme."));
     }
   }
 

@@ -1,19 +1,20 @@
 import 'dart:async';
 
-import 'package:day_planner/configs/theme_config.dart';
+import 'package:day_planner/extensions/object_extension.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
-import '../components/event_component.dart';
-import '../configs/app_config.dart';
-import '../models/event.dart';
+import 'package:day_planner/configs/theme_config.dart';
+import 'package:day_planner/components/event_component.dart';
+import 'package:day_planner/configs/app_config.dart';
+import 'package:day_planner/models/event.dart';
 
+/// Tableau des évènements avec affichage des heures de la journée.
+///
+/// Table of events with display of hours.
 @immutable
 class CurrentTimeLine extends StatefulWidget {
 
   final DateTime day;
-  final int distance;
-  final String displayTime;
   final List<Event> events;
 
   final Function getEvents;
@@ -21,8 +22,6 @@ class CurrentTimeLine extends StatefulWidget {
   const CurrentTimeLine({
     super.key,
     required this.day,
-    required this.distance,
-    required this.displayTime,
     required this.events,
     required this.getEvents
   });
@@ -32,6 +31,9 @@ class CurrentTimeLine extends StatefulWidget {
 
 }
 
+/// Etat de [CurrentTimeLine].
+///
+/// [CurrentTimeLine] state.
 class _CurrentTimeLineState extends State<CurrentTimeLine> {
 
   DateTime currentTime = DateTime.now();
@@ -47,39 +49,47 @@ class _CurrentTimeLineState extends State<CurrentTimeLine> {
     day = widget.day;
     events = widget.events;
 
+    // Met à jour l'affichage de l'heure actuelle toutes les secondes
+    // Updates current hour display every second
     Timer.periodic(const Duration(seconds: 1), (Timer t) => _updateTime());
   }
 
+  /// Met à jour l'affichage de l'heure actuelle. Ne recharge pas tout le widget.
+  ///
+  /// Update current time display without loading.
   void _updateTime() {
     setState(() {
       currentTime = DateTime.now();
+      displayTime = "${currentTime.hour.asTimeString()}:${currentTime.minute.asTimeString()}";
 
-      var currentHour = currentTime.hour < 10 ? "0${currentTime.hour}" : currentTime.hour;
-      var currentMinute = currentTime.minute < 10 ? "0${currentTime.minute}" : currentTime.minute;
-      displayTime = "$currentHour:$currentMinute";
-
-      distance = currentTime.hour * AppConfig.hourRowSize + currentTime.minute * (AppConfig.hourRowSize ~/ 60);
+      distance = currentTime.hour * DayPlannerConfig.hourRowSize + currentTime.minute * (DayPlannerConfig.hourRowSize ~/ 60);
     });
   }
 
-  static String showHours(int i) {
-    return (i < 10) ? '0$i:00' : '$i:00';
-  }
+  /// Retourne une bordure.
+  ///
+  /// Returns a border.
+  static BorderSide _getBorderSide(BuildContext context) => BorderSide(color: Theme.of(context).extension<Palette>()!.quinary);
 
-  static BorderSide getBorderSide(BuildContext context) => BorderSide(color: Theme.of(context).extension<Palette>()!.quinary);
 
-  BoxDecoration getHourRowDecoration(int i) {
-    var border = Border(top: getBorderSide(context), left: getBorderSide(context));
+  /// Retourne les bordures de la colonne des heures.
+  ///
+  /// Returns hour column borders.
+  BoxDecoration _getHourRowDecoration(int i) {
+    var border = Border(top: _getBorderSide(context), left: _getBorderSide(context));
     if (i == 23) {
-      border = Border(top: getBorderSide(context), left: getBorderSide(context), bottom: getBorderSide(context));
+      border = Border(top: _getBorderSide(context), left: _getBorderSide(context), bottom: _getBorderSide(context));
     }
     return BoxDecoration(border: border);
   }
 
-  BoxDecoration getEventRowDecoration(int i) {
-    var border = Border(top: getBorderSide(context), left: getBorderSide(context), right: getBorderSide(context));
+  /// Retourne les bordures de la colonne des évènements.
+  ///
+  /// Returns events column borders.
+  BoxDecoration _getEventRowDecoration(int i) {
+    var border = Border(top: _getBorderSide(context), left: _getBorderSide(context), right: _getBorderSide(context));
     if (i == 23) {
-      border = Border(top: getBorderSide(context), left: getBorderSide(context), right: getBorderSide(context), bottom: getBorderSide(context));
+      border = Border(top: _getBorderSide(context), left: _getBorderSide(context), right: _getBorderSide(context), bottom: _getBorderSide(context));
     }
     return BoxDecoration(border: border);
   }
@@ -94,30 +104,30 @@ class _CurrentTimeLineState extends State<CurrentTimeLine> {
               child: Table(
                 columnWidths: <int, TableColumnWidth>{
                   0: const FixedColumnWidth(120),
-                  1: FixedColumnWidth(AppConfig.eventsColumnWidth(context))
+                  1: FixedColumnWidth(DayPlannerConfig.eventsColumnWidth(context))
                 },
                 defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                 children: <TableRow>[
                   for (int i = 0; i < 24; i++)
                     TableRow(
-                      key: ValueKey("Hour$i"),
                       children: <Widget>[
                         TableCell(
                             verticalAlignment: TableCellVerticalAlignment.top,
                             child: Container(
-                              // Hours
-                                height: AppConfig.hourRowSize.toDouble(),
+                              // Colonne des heures
+                              // Hours column
+                                height: DayPlannerConfig.hourRowSize.toDouble(),
                                 width: 100,
-                                decoration: getHourRowDecoration(i),
-                                child: Text(showHours(i),
-                                    textAlign: TextAlign.center))),
+                                decoration: _getHourRowDecoration(i),
+                                child: Text("${i.asTimeString()}:00", textAlign: TextAlign.center))),
                         TableCell(
                             verticalAlignment: TableCellVerticalAlignment.top,
                             child: Container(
-                              // Events
-                                height: AppConfig.hourRowSize.toDouble(),
+                              // Colonne des évènements
+                              // Events column
+                                height: DayPlannerConfig.hourRowSize.toDouble(),
                                 width: 900,
-                                decoration: getEventRowDecoration(i))),
+                                decoration: _getEventRowDecoration(i))),
                       ],
                     )
                 ],
@@ -127,6 +137,8 @@ class _CurrentTimeLineState extends State<CurrentTimeLine> {
               top: distance.toDouble(),
               right: 5,
               child: Text(displayTime, style: TextStyle(
+                  // Colorie le contour du temps actuel en la couleur du fond pour rester visible sur tous les themes
+                  // Colors the outline of current time to the background color so that it stays visible for every theme
                   foreground: Paint()..style = PaintingStyle.stroke..strokeWidth = 3..color = Theme.of(context).extension<Palette>()!.background,
                   fontWeight: FontWeight.bold
               ))
@@ -134,15 +146,15 @@ class _CurrentTimeLineState extends State<CurrentTimeLine> {
           Positioned(
               top: distance.toDouble(),
               right: 5,
-              child: Text(displayTime, style: TextStyle(color: Theme.of(context).extension<Palette>()!.darkKey, fontWeight: FontWeight.bold))
+              child: Text(displayTime, style: TextStyle(color: Theme.of(context).extension<Palette>()!.cancelled, fontWeight: FontWeight.bold))
           ),
           Positioned(
               top: distance.toDouble(),
               left: 0,
-              right: 0, //1350
+              right: 0,
               child: Container(
                 height: 2,
-                color: Theme.of(context).extension<Palette>()!.darkKey,
+                color: Theme.of(context).extension<Palette>()!.cancelled,
               )
           ),
         ]

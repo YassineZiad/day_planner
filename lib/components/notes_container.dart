@@ -1,17 +1,20 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+import 'package:intl/intl.dart';
+
+import 'package:day_planner/configs/theme_config.dart';
 import 'package:day_planner/components/task_component.dart';
 import 'package:day_planner/dialogs/calendar_dialog.dart';
+import 'package:day_planner/dialogs/event_dialog.dart';
 import 'package:day_planner/models/note.dart';
 import 'package:day_planner/models/task.dart';
 import 'package:day_planner/repositories/note_repository.dart';
 import 'package:day_planner/repositories/task_repository.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
-import '../configs/theme_config.dart';
-import '../dialogs/event_dialog.dart';
-
-
+/// Widget d'affichage des notes et tâches
+///
+/// Display widget for notes and tasks
 class NotesContainer extends StatefulWidget {
 
   final DateTime day;
@@ -31,11 +34,12 @@ class NotesContainer extends StatefulWidget {
   _NotesContainerState createState() => _NotesContainerState();
 }
 
+/// Etat de [NotesContainer]
+///
+/// State of [NotesContainer]
 class _NotesContainerState extends State<NotesContainer> {
 
-  late bool _firstBuild;
-
-  static TextEditingController noteController = TextEditingController();
+  static final TextEditingController _noteController = TextEditingController();
 
   late bool _noteChanged;
   late String _noteBackup;
@@ -43,8 +47,6 @@ class _NotesContainerState extends State<NotesContainer> {
   @override
   void initState() {
     super.initState();
-    _firstBuild = true;
-
     initContent();
   }
 
@@ -52,14 +54,13 @@ class _NotesContainerState extends State<NotesContainer> {
     NoteRepository.getNote(DateFormat('yyyy-MM-dd').format(widget.day)).then((value)
     {
       if (value != null) {
-        noteController.text = value.text;
+        _noteController.text = value.text;
       } else {
-        print("on vide");
-        noteController.text = "";
+        _noteController.text = "";
       }
     });
 
-    _noteBackup = noteController.text;
+    _noteBackup = _noteController.text;
     _noteChanged = false;
   }
 
@@ -81,7 +82,8 @@ class _NotesContainerState extends State<NotesContainer> {
         width: defaultTargetPlatform == TargetPlatform.android ? MediaQuery.of(context).size.width : MediaQuery.of(context).size.width / 3,
         child: Column(children: [
 
-          // Ajout Tâche
+          // Ajout tâche
+          // Adding task
           Padding(
             padding: const EdgeInsets.only(bottom: 20),
             child: Row(
@@ -102,7 +104,6 @@ class _NotesContainerState extends State<NotesContainer> {
                     t = await TaskRepository.createTask(t);
                     setState(() {
                       widget.normalTasks.add(t);
-                      _firstBuild = false;
                     });
                   },
                 )
@@ -110,7 +111,8 @@ class _NotesContainerState extends State<NotesContainer> {
             ),
           ),
 
-          // TACHES PRIORITAIRES
+          // Taches prioritaires
+          // Priority tasks
           Padding(
               padding: const EdgeInsets.only(left: 20),
               child: Column(children: [
@@ -139,7 +141,8 @@ class _NotesContainerState extends State<NotesContainer> {
               );
             },
             onAcceptWithDetails: (DragTargetDetails<Task> details) async {
-              // PASSAGE DE NORMAL A PRIORITAIRE
+              // Passage de tâche normale à proritaire
+              // Switching task from standard to priority
               Task t = details.data;
               if (!t.priority) {
                 t.priority = true;
@@ -154,7 +157,8 @@ class _NotesContainerState extends State<NotesContainer> {
             },
           ),
 
-          // TACHES NORMALES
+          // Tâches normales
+          // Standard tasks
           Padding(
               padding: const EdgeInsets.only(top: 50, left: 20),
               child: Column(children: [
@@ -181,7 +185,8 @@ class _NotesContainerState extends State<NotesContainer> {
               );
             },
             onAcceptWithDetails: (DragTargetDetails<Task> details) async {
-              // PASSAGE DE PRIORITAIRE A NORMAL
+              // Passage de tâche prioriataire à normale
+              // Switching task from priority to standard
               Task t = details.data;
               if (t.priority) {
                 t.priority = false;
@@ -197,7 +202,8 @@ class _NotesContainerState extends State<NotesContainer> {
           ),
 
           const Padding(padding: EdgeInsets.only(bottom: 20)),
-          // Suppression Tâche
+          // Suppression d'une tâche
+          // Task deletion
           SizedBox(
             width: MediaQuery.of(context).size.width,
             child: Row(
@@ -219,6 +225,8 @@ class _NotesContainerState extends State<NotesContainer> {
                         builder: (context) => CalendarDialog(date: widget.day)
                     );
 
+                    // Si l'action s'est bien effectuée, on supprime la tâche de sa liste
+                    // Deleting task from its list if the action has been correctly performed
                     if (pickedDate != null) {
                       t.day = DateFormat('yyyy-MM-dd').format(pickedDate);
                       bool b = await TaskRepository.updateTask(t);
@@ -251,7 +259,7 @@ class _NotesContainerState extends State<NotesContainer> {
           ),
 
 
-          // NOTES
+          // Notes
           Padding(
               padding: const EdgeInsets.only(top: 50, left: 20),
               child: Column(children: [
@@ -268,12 +276,11 @@ class _NotesContainerState extends State<NotesContainer> {
                 TextField(
                     keyboardType: TextInputType.multiline,
                     maxLines: null,
-                    controller: noteController,
-                    onTap: () => _noteBackup = noteController.text,
+                    controller: _noteController,
+                    onTap: () => _noteBackup = _noteController.text,
                     onChanged: (v) {
                       setState(() {
                         _noteChanged = true;
-                        _firstBuild = false;
                       });
                     }
                 ),
@@ -286,17 +293,14 @@ class _NotesContainerState extends State<NotesContainer> {
                           icon: const Icon(Icons.save),
                           onPressed: () async {
                             bool isNew = await isNoteNew(widget.day);
-                            if (noteController.text.isNotEmpty) {
-                              Note n = Note(day: DateFormat('yyyy-MM-dd').format(widget.day), text: noteController.text);
+                            if (_noteController.text.isNotEmpty) {
+                              Note n = Note(day: DateFormat('yyyy-MM-dd').format(widget.day), text: _noteController.text);
                               isNew ? NoteRepository.createNote(n) : NoteRepository.updateNote(n);
-                            } else {
-                              if (!isNew) {
-                                NoteRepository.deleteNote(DateFormat('yyyy-MM-dd').format(widget.day));
-                              }
+                            } else if (!isNew) {
+                              NoteRepository.deleteNote(DateFormat('yyyy-MM-dd').format(widget.day));
                             }
 
                             setState(() {
-                              _firstBuild = false;
                               _noteChanged = false;
                             });
                           },
@@ -306,8 +310,7 @@ class _NotesContainerState extends State<NotesContainer> {
                           icon: const Icon(Icons.undo),
                           onPressed: () {
                             setState(() {
-                              _firstBuild = false;
-                              noteController.text = _noteBackup;
+                              _noteController.text = _noteBackup;
                               _noteChanged = false;
                             });
                           },

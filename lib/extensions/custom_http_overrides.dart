@@ -1,5 +1,8 @@
 import 'dart:io';
 
+/// Classe pour effectuer des requêtes HTTP sur l'api de développement.
+///
+/// A UTILISER QU'EN VERSION DE DEVELOPPEMENT
 class CustomHttpOverrides extends HttpOverrides{
   @override
   HttpClient createHttpClient(SecurityContext? context){

@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import '../configs/theme_config.dart';
 import '../repositories/task_repository.dart';
 
+/// Widget d'affichage des [Note]
+///
+/// [Note] display widget
 class TaskComponent extends StatefulWidget {
 
   final Task task;

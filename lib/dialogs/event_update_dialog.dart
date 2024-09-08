@@ -1,19 +1,18 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import '../configs/app_config.dart';
-import '../configs/theme_config.dart';
-import '../models/event.dart';
-import '../repositories/event_repository.dart';
+import 'package:day_planner/configs/app_config.dart';
+import 'package:day_planner/models/event.dart';
+import 'package:day_planner/repositories/event_repository.dart';
 
-class EventUpdateDialog extends StatefulWidget{
+/// Dialog d'options de modification d'un [Event].
+/// Cette classe permet de proposer à l'utilisateur s'il souhaite ou non que la modification d'un [Event]
+/// ait ou non une incidence sur les autres.
+class EventUpdateDialog extends StatefulWidget {
 
-  Event newEvent;
-  Event oldEvent;
+  final Event newEvent;
+  final Event oldEvent;
 
-  EventUpdateDialog({
+  const EventUpdateDialog({
     super.key,
     required this.newEvent,
     required this.oldEvent
@@ -33,16 +32,13 @@ class EventUpdateDialog extends StatefulWidget{
 
 }
 
+/// Etat interne à [EventUpdateDialog]
 class _EventUpdateDialogState extends State<EventUpdateDialog> {
 
   int? _choice = 0;
   bool _createNewEvent = false;
 
-  final TextEditingController _labelController = TextEditingController();
-  final TextEditingController _startHourController = TextEditingController();
-  final TextEditingController _startMinuteController = TextEditingController();
-  final TextEditingController _endHourController = TextEditingController();
-  final TextEditingController _endMinuteController = TextEditingController();
+  static final TextEditingController _labelController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +48,7 @@ class _EventUpdateDialogState extends State<EventUpdateDialog> {
         const Text("Choisir une option"),
 
         ListTile(
-          title: Text('Laisser l\'emplacement vide', style: TextStyle(fontSize: AppConfig.fontSize)),
+          title: Text('Laisser l\'emplacement vide', style: TextStyle(fontSize: DayPlannerConfig.fontSizeS)),
           leading: Radio<int>(
             value: 0,
             groupValue: _choice,
@@ -66,7 +62,7 @@ class _EventUpdateDialogState extends State<EventUpdateDialog> {
         ),
 
         ListTile(
-          title: Text('Créer un nouvel évènement à la place', style: TextStyle(fontSize: AppConfig.fontSize)),
+          title: Text('Créer un nouvel évènement à la place', style: TextStyle(fontSize: DayPlannerConfig.fontSizeS)),
           leading: Radio<int>(
             value: 1,
             groupValue: _choice,
@@ -88,90 +84,13 @@ class _EventUpdateDialogState extends State<EventUpdateDialog> {
                     controller: _labelController,
                     decoration: const InputDecoration(labelText: 'Libellé'),
                   ),
-                ),
-                /*Row(
-                  children: [
-                    const Text("Début: "),
-                    SizedBox(
-                        width: 50,
-                        child: TextField(
-                          controller: _startHourController,
-                          onChanged: (val) {
-                            if (val.isNotEmpty) {
-                              if (int.parse(val) >= 24) {
-                                _startHourController.text = "23";
-                              }
-                            }
-                          },
-                          keyboardType: TextInputType.number,
-                          inputFormatters: <TextInputFormatter>[
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                        )
-                    ),
-                    Text(":", style: TextStyle(fontSize: AppConfig.fontSize)),
-                    SizedBox(
-                      width: 50,
-                      child: TextField(
-                        controller: _startMinuteController,
-                        onChanged: (val) {
-                          if (val.isNotEmpty) {
-                            if (int.parse(val) >= 60) {
-                              _startMinuteController.text = "59";
-                            }
-                          }
-                        },
-                        keyboardType: TextInputType.number,
-                        inputFormatters: <TextInputFormatter>[
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                      ),
-                    ),
-                    const Padding(padding: EdgeInsets.only(right: 10)),
-                    const Text("Fin: "),
-                    SizedBox(
-                        width: 50,
-                        child: TextField(
-                          controller: _endHourController,
-                          onChanged: (val) {
-                            if (val.isNotEmpty) {
-                              if (int.parse(val) >= 24) {
-                                _endHourController.text = "23";
-                              }
-                            }
-                          },
-                          keyboardType: TextInputType.number,
-                          inputFormatters: <TextInputFormatter>[
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                        )
-                    ),
-                    Text(":", style: TextStyle(fontSize: AppConfig.fontSize)),
-                    SizedBox(
-                      width: 50,
-                      child: TextField(
-                        controller: _endMinuteController,
-                        onChanged: (val) {
-                          if (val.isNotEmpty) {
-                            if (int.parse(val) >= 60) {
-                              _endMinuteController.text = "59";
-                            }
-                          }
-                        },
-                        keyboardType: TextInputType.number,
-                        inputFormatters: <TextInputFormatter>[
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                      ),
-                    ),
-                  ],
-                ),*/
+                )
               ],
             ),
           ),
 
         ListTile(
-          title: Text('Remonter tous les évènements suivants.', style: TextStyle(fontSize: AppConfig.fontSize)),
+          title: Text('Déplacer tous les évènements de la même journée.', style: TextStyle(fontSize: DayPlannerConfig.fontSizeS)),
           leading: Radio<int>(
             value: 2,
             groupValue: _choice,
@@ -195,9 +114,6 @@ class _EventUpdateDialogState extends State<EventUpdateDialog> {
                 switch(_choice) {
                   case 1:
                     // Créer un nouvel évènement par dessus
-                    // DateTime dt = widget.event.startDt;
-                    // DateTime startDt = DateTime(dt.year, dt.month, dt.day, int.parse(_startHourController.text), int.parse(_startMinuteController.text));
-                    // DateTime endDt = DateTime(dt.year, dt.month, dt.day, int.parse(_endHourController.text), int.parse(_endMinuteController.text));
 
                     var newEvent = Event(
                         id: widget.newEvent.id,
@@ -210,7 +126,7 @@ class _EventUpdateDialogState extends State<EventUpdateDialog> {
                     break;
 
                   case 2:
-                    // Remonter tous les évènements suivants
+                    // Déplacer tous les évènements de la journée
                     r = await EventRepository.updateEventMove(widget.newEvent);
                     break;
 

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Classe de configuration pour le thème de l'appli
+///
+/// Configuration classe for the app theme
 class DayPlannerTheme {
 
   @required late Brightness brightness;
@@ -78,16 +81,23 @@ class DayPlannerTheme {
       ),
 
       dropdownMenuTheme: DropdownMenuThemeData(
-          menuStyle: MenuStyle(backgroundColor: MaterialStateProperty.all(lightKey)),
-      ),
-
-      timePickerTheme: TimePickerThemeData(
-        backgroundColor: background
+        menuStyle: MenuStyle(backgroundColor: MaterialStateProperty.all(lightKey)),
+        inputDecorationTheme: InputDecorationTheme(
+          enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: quinary)),
+          focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: cancelled))
+        )
       ),
 
       snackBarTheme: SnackBarThemeData(
         backgroundColor: secondary,
         contentTextStyle: TextStyle(color: darkKey),
+      ),
+
+      inputDecorationTheme: InputDecorationTheme(
+        errorStyle: TextStyle(color: cancelled),
+        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: quinary)),
+        focusedErrorBorder: UnderlineInputBorder(borderSide: BorderSide(color: cancelled)),
+        errorBorder: UnderlineInputBorder(borderSide: BorderSide(color: cancelled))
       ),
 
       colorScheme:

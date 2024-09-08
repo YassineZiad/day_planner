@@ -1,10 +1,15 @@
-import 'package:day_planner/dialogs/event_update_dialog.dart';
-import 'package:day_planner/repositories/event_repository.dart';
+import 'package:day_planner/extensions/object_extension.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-import '../configs/theme_config.dart';
-import '../models/event.dart';
+import 'package:day_planner/repositories/event_repository.dart';
+import 'package:day_planner/configs/app_config.dart';
+import 'package:day_planner/configs/theme_config.dart';
+import 'package:day_planner/models/event.dart';
 
+/// Dialog de création et de modification d'évènements
+///
+/// Dialog for creating and editing events
 class EventDialog {
 
   Event? event;
@@ -19,53 +24,16 @@ class EventDialog {
 
   static final _eventFormKey = GlobalKey<FormState>();
   static final TextEditingController _summaryController = TextEditingController();
+  static final TextEditingController _startHourController = TextEditingController();
+  static final TextEditingController _startMinuteController = TextEditingController();
+  static final TextEditingController _endHourController = TextEditingController();
+  static final TextEditingController _endMinuteController = TextEditingController();
 
+  /// Retourne le nom du dialog en fonction de l'action effectuée
+  ///
+  /// Returns dialog name depending on the action performed
   String getDialogTitle() {
     return create ? "Créer un évènement" : "Modifier un évènement";
-  }
-
-  String loadSummary() {
-    return create ? "" : event!.summary;
-  }
-
-  static Future<TimeOfDay> showStartTimePicker(BuildContext context, TimeOfDay startT) async {
-    TimeOfDay? pickerTime = await showTimePicker(
-        context: context,
-        helpText: "Début de l'évènement",
-        barrierDismissible: false,
-        initialTime: startT,
-        confirmText: "Confirmer",
-        cancelText: "Annuler",
-        hourLabelText: "Heure",
-        minuteLabelText: "Minute",
-        builder: (BuildContext context, Widget? child) {
-          return MediaQuery(
-              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-              child: child!
-          );
-        }
-    );
-    return pickerTime ?? startT;
-  }
-
-  static Future<TimeOfDay> showEndTimePicker(BuildContext context, TimeOfDay endT) async {
-    TimeOfDay? pickerTime = await showTimePicker(
-        context: context,
-        helpText: "Fin de l'évènement",
-        barrierDismissible: false,
-        initialTime: endT,
-        confirmText: "Confirmer",
-        cancelText: "Annuler",
-        hourLabelText: "Heure",
-        minuteLabelText: "Minute",
-        builder: (BuildContext context, Widget? child) {
-          return MediaQuery(
-              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-              child: child!
-          );
-        }
-    );
-    return pickerTime ?? endT; //pickerTime == null ? endT : pickerTime
   }
 
   Future<void> show(BuildContext context) async {
@@ -75,10 +43,6 @@ class EventDialog {
       icon: const Icon(Icons.delete_forever),
       actions: [
         TextButton(
-          child: const Text("Annuler"),
-          onPressed:  () => Navigator.pop(context),
-        ),
-        TextButton(
           style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).extension<Palette>()!.cancelled)),
           child: const Text("Supprimer"),
           onPressed:  () {
@@ -86,15 +50,26 @@ class EventDialog {
             Navigator.pop(context);
             Navigator.pop(context);
           },
+        ),
+        TextButton(
+          child: const Text("Annuler"),
+          onPressed:  () => Navigator.pop(context),
         )
       ],
     );
 
     DateTime dt = this.day;
-    TimeOfDay? startT = create ? TimeOfDay.now() : TimeOfDay(hour: event!.startDt.hour, minute: event!.startDt.minute);
-    TimeOfDay? endT = create ? TimeOfDay.now() : TimeOfDay(hour: event!.endDt.hour, minute: event!.endDt.minute);
 
-    _summaryController.text = loadSummary();
+    // Valeurs par défaut de saisie
+    // Default input values
+    _summaryController.text = create ? "" : event!.summary;
+
+    _startHourController.text = create ? TimeOfDay.now().hour.asTimeString() : event!.startDt.hour.asTimeString();
+    _startMinuteController.text = create ? TimeOfDay.now().minute.asTimeString() : event!.startDt.minute.asTimeString();
+
+    int endHour = TimeOfDay.now().hour + 1 > 23 ? 23 : TimeOfDay.now().hour + 1;
+    _endHourController.text = create ? endHour.asTimeString() : event!.endDt.hour.asTimeString();
+    _endMinuteController.text = create ? TimeOfDay.now().minute.asTimeString() : event!.endDt.minute.asTimeString();
 
     return showDialog<void>(
       context: context,
@@ -117,20 +92,82 @@ class EventDialog {
                         return null;
                       },
                     ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.hourglass_top),
-                      label: const Text("Heure de début"),
-                      onPressed: () async {
-                          startT = await showStartTimePicker(context, startT!);
-                        },
-                    ),
-                    TextButton.icon(
-                        icon: const Icon(Icons.hourglass_bottom),
-                        label: const Text("Heure de fin"),
-                        onPressed: () async {
-                          endT = await showEndTimePicker(context, endT!);
-                        }
-                    ),
+                    Row(
+                    children: [
+                      const Text("Début: "),
+                      SizedBox(
+                          width: 50,
+                          child: TextField(
+                            controller: _startHourController,
+                            onChanged: (val) {
+                              if (val.isNotEmpty) {
+                                if (int.parse(val) >= 24) {
+                                  _startHourController.text = "23";
+                                }
+                              }
+                            },
+                            keyboardType: TextInputType.number,
+                            inputFormatters: <TextInputFormatter>[
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                          )
+                      ),
+                      Text(":", style: TextStyle(fontSize: DayPlannerConfig.fontSizeS)),
+                      SizedBox(
+                        width: 50,
+                        child: TextField(
+                          controller: _startMinuteController,
+                          onChanged: (val) {
+                            if (val.isNotEmpty) {
+                              if (int.parse(val) >= 60) {
+                                _startMinuteController.text = "59";
+                              }
+                            }
+                          },
+                          keyboardType: TextInputType.number,
+                          inputFormatters: <TextInputFormatter>[
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                        ),
+                      ),
+                      const Padding(padding: EdgeInsets.only(right: 10)),
+                      const Text("Fin: "),
+                      SizedBox(
+                          width: 50,
+                          child: TextField(
+                            controller: _endHourController,
+                            onChanged: (val) {
+                              if (val.isNotEmpty) {
+                                if (int.parse(val) >= 24) {
+                                  _endHourController.text = "23";
+                                }
+                              }
+                            },
+                            keyboardType: TextInputType.number,
+                            inputFormatters: <TextInputFormatter>[
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                          )
+                      ),
+                      Text(":", style: TextStyle(fontSize: DayPlannerConfig.fontSizeS)),
+                      SizedBox(
+                        width: 50,
+                        child: TextField(
+                          controller: _endMinuteController,
+                          onChanged: (val) {
+                            if (val.isNotEmpty) {
+                              if (int.parse(val) >= 60) {
+                                _endMinuteController.text = "59";
+                              }
+                            }
+                          },
+                          keyboardType: TextInputType.number,
+                          inputFormatters: <TextInputFormatter>[
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                        ),
+                      ),
+                    ]),
                     Row(
                       children: [
                         ElevatedButton(
@@ -138,8 +175,8 @@ class EventDialog {
                             if (_eventFormKey.currentState!.validate()) {
                               Event e = Event(
                                   summary: _summaryController.text,
-                                  startDt: DateTime(dt.year, dt.month, dt.day, startT!.hour, startT!.minute),
-                                  endDt: DateTime(dt.year, dt.month, dt.day, endT!.hour, endT!.minute)
+                                  startDt: DateTime(dt.year, dt.month, dt.day, int.parse(_startHourController.text), int.parse(_startMinuteController.text)),
+                                  endDt: DateTime(dt.year, dt.month, dt.day, int.parse(_endHourController.text), int.parse(_endMinuteController.text))
                               );
 
                               bool r;

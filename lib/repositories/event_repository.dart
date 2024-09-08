@@ -4,8 +4,14 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
+/// Effectue toutes les requêtes à l'API pour la classe métier [Event].
+///
+/// Performs every API requests for the [Event] class.
 class EventRepository {
 
+  /// Crée un nouvel évènement.
+  ///
+  /// Creates a new event.
   static Future<bool> createEvent(Event e) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}events";
@@ -29,6 +35,9 @@ class EventRepository {
     return (response.statusCode == 201);
   }
 
+  /// Retourne tous les évènements pour cette date.
+  ///
+  /// Get every event by their date.
   static Future<List<Event>> getEventsByDate(String day) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}events/$day";
@@ -44,6 +53,9 @@ class EventRepository {
     return json.decode(response.body).map((events) => Event.fromJson(events)).toList().cast<Event>();
   }
 
+  /// Retourne un évènement par son id.
+  ///
+  /// Returns event by its id.
   static Future<Event?> getEventById(int id) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}events/id/$id";
@@ -59,6 +71,9 @@ class EventRepository {
     return response.statusCode == 404 ? null : Event.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
+  /// Met à jour un évènement.
+  ///
+  /// Updates event.
   static Future<bool> updateEvent(Event e) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}events/${e.id}";
@@ -82,6 +97,9 @@ class EventRepository {
     return (response.statusCode == 202);
   }
 
+  /// Déplace un évènement et créer un autre évènement à son ancienne place maintenant libérée.
+  //
+  // Moves event and create a new one where it was.
   static Future<bool> updateEventReplace(Event newEvent, Event oldEvent) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}events/updateReplace/${oldEvent.id}";
@@ -102,9 +120,12 @@ class EventRepository {
         })
     );
 
-    return (response.statusCode == 201);
+    return (response.statusCode == 202);
   }
 
+  /// Déplace tous les évènements du jour de la même durée.
+  ///
+  /// Moves all the day's events by the same amount of time.
   static Future<bool> updateEventMove(Event e) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}events/updateMove/${e.id}";
@@ -124,9 +145,12 @@ class EventRepository {
         })
     );
 
-    return (response.statusCode == 201);
+    return (response.statusCode == 202);
   }
 
+  /// Supprime un évènement.
+  ///
+  /// Deletes event.
   static Future<bool> deleteEvent(Event e) async {
     SharedPreferences sp = await SharedPreferences.getInstance();
     String? url = "${sp.getString('url')}events/${e.id}";

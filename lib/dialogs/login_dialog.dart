@@ -1,22 +1,24 @@
+import 'package:day_planner/configs/app_config.dart';
 import 'package:day_planner/models/user.dart';
+import 'package:day_planner/repositories/user_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../repositories/user_repository.dart';
-
+/// Classe du dialog de connexion et de création de compte.
+///
+/// Affiche les informations de l'utilisateur une fois connecté.
 class LoginDialog {
 
   static bool isConnected = false;
 
   static final _loginFormKey = GlobalKey<FormState>();
-  static TextEditingController loginEmailController = TextEditingController();
-  static TextEditingController loginPasswordController = TextEditingController();
+  static final TextEditingController _loginEmailController = TextEditingController();
+  static final TextEditingController _loginPasswordController = TextEditingController();
 
   static final _registerFormKey = GlobalKey<FormState>();
-  static TextEditingController registerEmailController = TextEditingController();
-  static TextEditingController registerNicknameController = TextEditingController();
-  static TextEditingController registerPassword1Controller = TextEditingController();
-  static TextEditingController registerPassword2Controller = TextEditingController();
+  static final TextEditingController _registerEmailController = TextEditingController();
+  static final TextEditingController _registerNicknameController = TextEditingController();
+  static final TextEditingController _registerPassword1Controller = TextEditingController();
+  static final TextEditingController _registerPassword2Controller = TextEditingController();
 
   static Future<void> buildUserDialog(User? user, bool connected, BuildContext context) {
 
@@ -28,13 +30,14 @@ class LoginDialog {
         context: context,
         builder: (BuildContext context) {
 
+          // Compte connecté
           return SimpleDialog(
             title: const Text('Profil'),
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("${user!.nickname} (${user!.mail})"),
+                  Text("${user!.nickname} (${user.mail})", style: TextStyle(fontSize: DayPlannerConfig.fontSizeS)),
                   Row(
                     children: [
                       ElevatedButton(
@@ -89,6 +92,7 @@ class LoginDialog {
 
     } else {
 
+      // Connexion Utilisateur
       return showDialog<void>(
         context: context,
         builder: (BuildContext context) {
@@ -103,7 +107,7 @@ class LoginDialog {
                   children: [
                     TextFormField(
                       decoration: const InputDecoration(labelText: 'Adresse mail'),
-                      controller: loginEmailController,
+                      controller: _loginEmailController,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Il manque l\'adresse mail';
@@ -117,7 +121,7 @@ class LoginDialog {
                       autocorrect: false,
                       decoration: const InputDecoration(
                           labelText: 'Mot de passe'),
-                      controller: loginPasswordController,
+                      controller: _loginPasswordController,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Il manque le mot de passe';
@@ -132,21 +136,20 @@ class LoginDialog {
                           ElevatedButton(
                             onPressed: () async {
                               if (_loginFormKey.currentState!.validate()) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Connexion...")));
                                 bool r = await UserRepository.login(
-                                    loginEmailController.text,
-                                    loginPasswordController.text
+                                    _loginEmailController.text,
+                                    _loginPasswordController.text
                                 );
                                 if (r) {
-                                  SharedPreferences sp = await SharedPreferences
-                                      .getInstance();
                                   Navigator.pop(context);
-                                  //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Connecté !")));
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                           content: Text("Identifiants incorrects.")
                                       ));
                                 }
+                                _loginPasswordController.text = "";
                                 isConnected = r;
                               }
                             },
@@ -189,7 +192,7 @@ class LoginDialog {
                     TextFormField(
                       autocorrect: false,
                       decoration: const InputDecoration(labelText: 'Adresse mail'),
-                      controller: registerEmailController,
+                      controller: _registerEmailController,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Il manque l\'adresse mail';
@@ -201,7 +204,7 @@ class LoginDialog {
                       enableSuggestions: false,
                       autocorrect: false,
                       decoration: const InputDecoration(labelText: 'Nom d\'utilisateur'),
-                      controller: registerNicknameController,
+                      controller: _registerNicknameController,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Il manque le pseudo';
@@ -214,7 +217,7 @@ class LoginDialog {
                       enableSuggestions: false,
                       autocorrect: false,
                       decoration: const InputDecoration(labelText: 'Mot de passe'),
-                      controller: registerPassword1Controller,
+                      controller: _registerPassword1Controller,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Veuillez saisir un mot de passe';
@@ -227,12 +230,12 @@ class LoginDialog {
                       enableSuggestions: false,
                       autocorrect: false,
                       decoration: const InputDecoration(labelText: 'Confirmer le mot de passe'),
-                      controller: registerPassword2Controller,
+                      controller: _registerPassword2Controller,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Confirmez le mot de passe';
                         }
-                        if (value != registerPassword1Controller.text) {
+                        if (value != _registerPassword1Controller.text) {
                           return 'Les mots de passe ne correspondent pas';
                         }
                         return null;
@@ -244,7 +247,7 @@ class LoginDialog {
                         onPressed: () async {
                           if (_registerFormKey.currentState!.validate()) {
                             bool r = await UserRepository.register(
-                                registerNicknameController.text, registerEmailController.text, registerPassword1Controller.text
+                                _registerNicknameController.text, _registerEmailController.text, _registerPassword1Controller.text
                             );
                             if (r) {
                               Navigator.pop(context);

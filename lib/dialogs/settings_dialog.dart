@@ -19,7 +19,7 @@ class SettingsDialog extends StatefulWidget {
 }
 
 class _SettingsDialogState extends State<SettingsDialog>{
-  double sliderValue = AppConfig.hourRowSize.toDouble();
+  double sliderValue = DayPlannerConfig.hourRowSize.toDouble();
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +28,7 @@ class _SettingsDialogState extends State<SettingsDialog>{
       children: <Widget>[
         Column(
           children: [
+            Text("Affichage des heures", style: TextStyle(fontSize: DayPlannerConfig.fontSizeS)),
             Slider(
               value: sliderValue,
               min: 60,
@@ -42,8 +43,8 @@ class _SettingsDialogState extends State<SettingsDialog>{
             ),
             ElevatedButton(
               onPressed: () {
-                if (AppConfig.hourRowSize != sliderValue) {
-                  AppConfig.hourRowSize = sliderValue.toInt();
+                if (DayPlannerConfig.hourRowSize != sliderValue) {
+                  DayPlannerConfig.hourRowSize = sliderValue.toInt();
                 }
                 Navigator.pop(context);
               },

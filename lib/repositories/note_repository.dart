@@ -3,6 +3,9 @@ import 'package:day_planner/models/note.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Effectue toutes les requêtes à l'API pour la classe métier [Note].
+///
+/// Performs every API requests for the [Note] class.
 class NoteRepository {
 
   static Future<bool> createNote(Note n) async {
